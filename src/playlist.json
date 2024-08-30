@@ -1,0 +1,89 @@
+{
+	"title": "Night of Bands",
+	"countIn": true,
+	"songs": [
+		{
+			"title": "When You're Gone",
+			"bpm": 128,
+			"autoSilence": 10,
+			"duration": "3:26"
+		},
+		{
+			"title": "Tainted Love",
+			"bpm": 165,
+			"autoStop": 10,
+			"duration": "2:35"
+		},
+		{
+			"title": "Too Close",
+			"bpm": 125,
+			"duration": "3:31"
+		},
+		{
+			"title": "Drum Machine",
+			"bpm": 92,
+			"autoStop": 10,
+			"duration": "3:34"
+		},
+		{
+			"title": "Steve McQueen",
+			"bpm": 88,
+			"autoStop": 10,
+			"duration": "3:05"
+		},
+		{
+			"title": "Heard it Through the Grapevine",
+			"bpm": 122,
+			"autoStop": 10,
+			"duration": "4:15"
+		},
+		{
+			"title": "This is the Life",
+			"bpm": 92,
+			"autoStop": 10,
+			"duration": "3:10"
+		},
+		{
+			"title": "Chase the Sun",
+			"bpm": 81,
+			"autoStop": 10,
+			"duration": "3:35"
+		},
+		{
+			"title": "Walking in Memphis",
+			"bpm": 122,
+			"autoStop": 10,
+			"duration": "4:43"
+		},
+		{
+			"title": "Serenity",
+			"bpm": 125,
+			"autoStop": 10,
+			"duration": "3:46"
+		},
+		{
+			"title": "It Takes Two",
+			"bpm": 133,
+			"autoStop": 10,
+			"duration": "3:50"
+		},
+		{
+			"title": "Poison",
+			"bpm": 115,
+			"autoStop": 10,
+			"duration": "4:02"
+		},
+		{
+			"title": "You're No Good",
+			"bpm": 112,
+			"autoStop": 10,
+			"duration": "2:51"
+		},
+		{
+			"title": "You Shook Me All Night Long",
+			"bpm": 125,
+			"autoStop": 10,
+			"duration": "3:38"
+		}
+	]
+}

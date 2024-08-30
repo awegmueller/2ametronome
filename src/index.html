@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Metro</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./metro.css">
+</head>
+<body>
+    <div id="metronome">
+        <div id="currentBar">&nbsp;</div>
+        <div id="currentBeatInBar">0</div>
+        <div id="songInfos"></div>
+        <div id="settingsPopup">
+            <label for="fileInput" id="fileInputLabel"><img src="./img/settings.svg" alt="Settings menu"></label>
+            <input type="file" id="fileInput" accept=".json">
+        </div>
+    </div>
+    <div id="currentSongInfo">
+        <span id="currentSongNo">&nbsp;</span>
+        <span id="currentSongTitle">Play a song</span>
+        <span id="currentSongBpm">0</span>
+        <span class="bpm-label">bpm</span>
+    </div>
+    <div id="controlButtonBar">
+        <img src="./img/arrow-up.svg" class="control-button disabled" id="previousSongButton" alt="Previous song">
+        <img src="./img/stop-circle-color.svg" class="control-button disabled" id="stopButton" alt="Stop">
+        <img src="./img/play-circle-color.svg" class="control-button disabled" id="pausePlayButton" alt="Pause/play">
+        <img src="./img/arrow-down.svg" class="control-button disabled" id="nextSongButton" alt="Next song">
+    </div>
+
+    <div id="playlistHeader">
+        <h1 id="playlistTitle">Playlist</h1>
+        <p id="playlistSubtitle">x Songs</p>
+    </div>
+
+    <div id="playlistContainer">
+        <table id="playlist">
+            <tr id="playlistRowTemplate">
+                <td class="songNo">1</td>
+                <td><img src="./img/play-circle-color.svg" class="control-button small playButton" alt="Play song"></td>
+                <td class="songTitle">Foo Bar</td>
+                <td class="songBpm">125 bpm</td>
+            </tr>
+        </table>
+    </div>
+
+    <script src="./metro.js"></script>
+
+</body>
+</html>

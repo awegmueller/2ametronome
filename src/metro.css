@@ -1,0 +1,172 @@
+body {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    margin: 0;
+}
+
+div {
+    box-sizing: border-box;
+}
+
+/* ---- SETTINGS ---- */
+#settingsPopup {
+    position: absolute;
+    left: 265px;
+    top: 10px;
+}
+
+#fileInput {
+    display: none;
+}
+
+#fileInputLabel {
+    opacity: 0.5;
+}
+
+/* ---- PLAYLIST ---- */
+
+#playlistHeader {
+    background-image: linear-gradient(#FFFFFF 0%, #FFFFFF 70%, #ededed 100%);
+    width: 300px;
+}
+
+#playlistTitle {
+    font-size: 20px;
+    margin: 0;
+}
+
+#playlistSubtitle {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+#playlistContainer {
+    overflow-y: scroll;
+    max-height: 240px;
+}
+
+#playlist {
+    width: 300px;
+    white-space: nowrap;
+    border-collapse: collapse;
+}
+
+.songTitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.songNo {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.songBpm {
+    text-align: right;
+}
+
+tr.now-playing > td {
+    background-color: #ffdd77;
+}
+
+/* ---- CURRENT SONG INFO ---- */
+#currentSongInfo {
+    background-color: #BBB;
+    width: 300px;
+    font-weight: bold;
+    font-size: 20px;
+    display: flex;
+    white-space: nowrap;
+    padding: 5px;
+    border-bottom: solid 2px grey;
+}
+
+#currentSongTitle {
+    flex-grow: 4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 8px;
+}
+
+.bpm-label {
+    font-weight: normal;
+    font-size: 16px;
+    margin-left: 4px;
+    padding-top: 4px;
+}
+
+/* ---- METRONOME ---- */
+#metronome {
+    border: solid 2px black;
+    width: 300px;
+    height: 300px;
+    position: relative;
+}
+
+#metronome.first-beat {
+    background-color: #FF0000;
+    color: white;
+}
+
+#metronome.beat-0 {
+    background-color: #666666;
+}
+
+#metronome.beat-1 {
+    background-color: #cccccc;
+}
+
+#currentBar {
+    font-size: 30px;
+    font-weight: bold;
+    padding: 5px 0 0 10px;
+}
+
+#currentBeatInBar {
+    position: absolute;
+    font-size: 90px;
+    font-weight: bold;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    left: 50%;
+}
+
+#songInfos {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: black;
+    opacity: 0.5;
+}
+
+/* ---- CONTROL BUTTON BAR ---- */
+#controlButtonBar {
+    width: 300px;
+    display: flex;
+    border-bottom: solid 2px grey;
+    justify-content: space-between;
+    background-color: #f8f8f8;
+}
+
+.control-button {
+    width: 50px;
+    height: 50px;
+    margin: 3px 0;
+}
+
+.control-button.disabled {
+  opacity: 0.5;
+}
+
+.control-button.small {
+    width: 25px;
+    height: 25px;
+}
+
+.control-button:hover:not(.disabled) {
+    cursor: pointer;
+}
+

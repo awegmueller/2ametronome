@@ -1,0 +1,77 @@
+{
+	"title": "Zwicky Set B",
+	"countIn": true,
+	"songs": [
+		{
+			"title": "Je Veux",
+			"bpm": 155,
+			"autoSilence": 10,
+			"duration": "3:43"
+		},
+		{
+			"title": "Tokio",
+			"bpm": 115,
+			"autoStop": 10,
+			"duration": "3:23"
+		},
+		{
+			"title": "Doesn't Really Matter",
+			"bpm": 115,
+			"duration": "2:47"
+		},
+		{
+			"title": "Mirage",
+			"bpm": 94,
+			"autoStop": 10,
+			"duration": "3:53"
+		},
+		{
+			"title": "Africa",
+			"bpm": 92,
+			"autoStop": 10,
+			"duration": "3:38"
+		},
+		{
+			"title": "Dancing in the Dark",
+			"bpm": 64,
+			"autoStop": 10,
+			"duration": "3:49"
+		},
+		{
+			"title": "Chumi hüt nöd, chumi morn",
+			"bpm": 108,
+			"autoStop": 10,
+			"duration": "2:54"
+		},
+		{
+			"title": "9 to 5",
+			"bpm": 102,
+			"autoStop": 10,
+			"duration": "2:59"
+		},
+		{
+			"title": "Can't Stop",
+			"bpm": 88,
+			"autoStop": 10,
+			"duration": "4:34"
+		},
+		{
+			"title": "Piece of My Heart",
+			"bpm": 82,
+			"autoStop": 10,
+			"duration": "4:13"
+		},
+		{
+			"title": "You're No Good",
+			"bpm": 112,
+			"autoStop": 10,
+			"duration": "2:51"
+		},
+		{
+			"title": "You Shook Me All Night Long",
+			"bpm": 125,
+			"autoStop": 10,
+			"duration": "3:38"
+		}
+	]
+}
