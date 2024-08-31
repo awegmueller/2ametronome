@@ -11,10 +11,6 @@
         <div id="currentBar">&nbsp;</div>
         <div id="currentBeatInBar">0</div>
         <div id="songInfos"></div>
-        <div id="settingsPopup">
-            <label for="fileInput" id="fileInputLabel"><img src="./img/settings.svg" alt="Settings menu"></label>
-            <input type="file" id="fileInput" accept=".json">
-        </div>
     </div>
     <div id="currentSongInfo">
         <span id="currentSongNo">&nbsp;</span>
@@ -43,6 +39,28 @@
                 <td class="songBpm">125 bpm</td>
             </tr>
         </table>
+    </div>
+
+    <div id="settingsPopup">
+        <label for="fileInput" id="fileInputLabel"><img src="./img/settings.svg" alt="Settings menu"></label>
+        <input type="file" id="fileInput" accept=".json">
+
+        <p class="settings-row">
+        <label>Tone:</label>
+        <input type="radio" name="tone" value="click" id="tone1" checked="checked">
+        <label for="tone1">Click</label>
+        <input type="radio" name="tone" value="sine" id="tone2">
+        <label for="tone2">Sine</label>
+        </p>
+
+        <p class="settings-row">
+        <label for="pitch">Pitch:</label>
+        <select id="pitch">
+            <option value="high">High</option>
+            <option value="default" selected="selected">Default</option>
+            <option value="low">Low</option>
+        </select>
+        </p>
     </div>
 
     <script src="./metro.js"></script>

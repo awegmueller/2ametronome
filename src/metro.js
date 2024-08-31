@@ -53,12 +53,14 @@ class Metronome {
         this.intervalID = null;
         this.callback = callback;
         this.muted = false;
+        this.tone = MetroSettings.TONE_CLICK;
+        this.pitch = MetroSettings.PITCH_DEFAULT;
 
         this.currentBeatInBar = 0;
         this.currentBeat = 0; // Overall beats since start
     }
 
-    nextBeep() {
+    nextTone() {
         // Advance current note and time by a quarter note (crotchet if you're posh)
         let secondsPerBeat = 60.0 / this.bpm; // Notice this picks up the CURRENT tempo value to calculate beat length.
         this.nextNoteTime += secondsPerBeat; // Add beat length to last beat time
@@ -70,20 +72,38 @@ class Metronome {
         }
     }
 
-    scheduleBeep(beat, beatInBar, time) {
+    scheduleTone(beat, beatInBar, time) {
         let bar = Math.floor(this.currentBeat / Metronome.BEATS_PER_BAR);
         this.callback(beat, bar, beatInBar, true);
         if (!this.muted) {
-            this.beep(beatInBar, time);
+            switch (this.tone) {
+                case MetroSettings.TONE_CLICK:
+                    this.makeClickTone(beatInBar, time);
+                    break;
+                case MetroSettings.TONE_SINE:
+                    this.makeSineTone(beatInBar, time);
+                    break;
+                default:
+                    throw new Error('Unsupported tone "' + this.settings.tone + '"');
+            }
         }
     }
 
-    beep(beatInBar, time) {
-        // Create an oscillator
+    calcFrequency(frequency) {
+        let modifier = 1;
+        if (this.pitch === MetroSettings.PITCH_LOW) {
+            modifier = 0.75;
+        } else if (this.pitch === MetroSettings.PITCH_HIGH) {
+            modifier = 1.5;
+        }
+        return frequency * modifier;
+    }
+
+    makeClickTone(beatInBar, time) {
         const osc = this.audioContext.createOscillator();
         const envelope = this.audioContext.createGain();
 
-        osc.frequency.value = (beatInBar % Metronome.BEATS_PER_BAR === 0) ? 1000 : 800;
+        osc.frequency.value = this.calcFrequency((beatInBar % Metronome.BEATS_PER_BAR === 0) ? 1200 : 1000);
         envelope.gain.value = 1;
         envelope.gain.exponentialRampToValueAtTime(1, time + 0.001);
         envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
@@ -95,11 +115,28 @@ class Metronome {
         osc.stop(time + 0.03);
     }
 
+    makeSineTone(beatInBar, time) {
+        const frequency = this.calcFrequency((beatInBar % Metronome.BEATS_PER_BAR === 0) ? 1568 : 1046);
+        const duration = 50;
+        const osc = this.audioContext.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
+
+        osc.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        osc.start(); // TODO: use time parameter
+        osc.stop(this.audioContext.currentTime + duration / 1000); // duration in seconds
+    }
+
     scheduler() {
         // while there are notes that will need to play before the next interval, schedule them and advance the pointer.
         while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
-            this.scheduleBeep(this.currentBeat, this.currentBeatInBar, this.nextNoteTime);
-            this.nextBeep();
+            this.scheduleTone(this.currentBeat, this.currentBeatInBar, this.nextNoteTime);
+            this.nextTone();
         }
     }
 
@@ -129,6 +166,14 @@ class Metronome {
     setMuted(muted) {
         this.muted = muted;
     }
+
+    setTone(tone) {
+        this.tone = tone;
+    }
+    setPitch(pitch) {
+        this.pitch = pitch;
+    }
+
 }
 
 // -------------------
@@ -155,7 +200,7 @@ class Metro {
         this.metronome = null;
         this.state = Metro.STATE_STOPPED;
         this.domUtil = new DomUtil();
-        this.settings = new MetroSettings(this.onPlaylistUploaded.bind(this));
+        this.settings = new MetroSettings(this.onSettingsChange.bind(this));
         this.currentSong = Metro.NULL_SONG;
     }
 
@@ -181,12 +226,18 @@ class Metro {
         return response.json(); // get JSON from the response; returns a promise, which resolves to this data value
     }
 
-    onPlaylistUploaded(playlist) {
-        if (this.state !== Metro.STATE_STOPPED) {
-            this.setState(Metro.STATE_STOPPED); // FIXME: deal with case that metronome is not initialized yet
+    onSettingsChange(event) {
+        if (event.property === 'playlist') {
+            if (this.state !== Metro.STATE_STOPPED) {
+                this.setState(Metro.STATE_STOPPED); // FIXME: deal with case that metronome is not initialized yet
+            }
+            this.renderPlaylist(event.value);
+            this.setCurrentSong(Metro.NULL_SONG);
+        } else if (event.property === 'tone') {
+            this.metronome.setTone(event.value);
+        } else if (event.property === 'pitch') {
+            this.metronome.setPitch(event.value);
         }
-        this.renderPlaylist(playlist);
-        this.setCurrentSong(Metro.NULL_SONG);
     }
 
     setCurrentSong(currentSong) {
@@ -455,22 +506,94 @@ class Metro {
 // ------------------
 class MetroSettings {
 
+    static TONE_CLICK = 'click';
+    static TONE_SINE = 'sine';
+
+    static PITCH_HIGH = 'high';
+    static PITCH_DEFAULT = 'default';
+    static PITCH_LOW = 'low';
+
     constructor(callback) {
         this.callback = callback;
+        this.playlist = null; // TODO: use correct initial value
+        this.tone = MetroSettings.TONE_CLICK;
+        this.pitch = MetroSettings.PITCH_DEFAULT;
     }
 
     init() {
+        let storedSettings = localStorage.getItem('settings');
+        if (storedSettings) {
+            let settings = JSON.parse(storedSettings);
+            this.playlist = settings.playlist;
+            this.tone = settings.tone;
+            this.pitch = settings.pitch;
+        } else {
+            this.storeSettings();
+        }
+        this.checkRadio(this.tone);
+        this.addEventListeners();
+    }
+
+    checkRadio(value) {
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            if (radio.value === value) {
+                radio.checked = true;
+            }
+        })
+    }
+
+    storeSettings() {
+        localStorage.setItem('settings', JSON.stringify({
+            playlist: this.playlist,
+            tone: this.tone,
+            pitch: this.pitch
+        }));
+    }
+
+    addEventListeners() {
         document.getElementById('fileInput').addEventListener('change', this.onFileInputChange.bind(this));
+
+        document.querySelectorAll('input[type="radio"]').forEach(radio =>
+            radio.addEventListener('change', this.onToneRadioChange.bind(this)));
+
+        document.getElementById('pitch').addEventListener('change', this.onPitchChange.bind(this));
+    }
+
+    onPitchChange(event) {
+        let pitch = event.target.value;
+        console.log('Pitch changed ', pitch);
+        this.pitch = pitch;
+        this.storeSettings();
+        this.callback({
+            property: 'pitch',
+            value: pitch
+        })
+    }
+
+    onToneRadioChange(event) {
+        let tone = event.target.value;
+        console.log('Tone selected ', tone);
+        this.tone = tone;
+        this.storeSettings();
+        this.callback({
+            property: 'tone',
+            value: tone
+        })
     }
 
     onFileInputChange(event) {
-        const file = event.target.files[0];
+        let file = event.target.files[0];
         if (file) {
-            const reader = new FileReader();
+            let reader = new FileReader();
             reader.onload = (event) => {
                 try {
                     let playlist = JSON.parse(event.target.result);
-                    this.callback(playlist);
+                    this.playlist = playlist;
+                    this.storeSettings();
+                    this.callback({
+                        property: 'playlist',
+                        value: playlist
+                    });
                 } catch (error) {
                     console.error('Failed to parse playlist JSON', error);
                 }
@@ -483,12 +606,13 @@ class MetroSettings {
 let metro = new Metro();
 metro.startup();
 
+// TODO: GUI drehbar landscape/portrait
 // TODO: Playlist im local storage persistieren
 // TODO: countIn anders visualisieren (grün) und andere töne
 // TODO: Fortschrittsbalken (Dauer)
-// TODO: Töne konfigurierbar(-er)
 // TODO: autoStop ein/aus (Checkbox)
 
+// DONE: Töne konfigurierbar(-er)
 // DONE: Playlist hochladen, Metro#setPlaylist implementieren
 // DONE: autoStop anzeigen
 // DONE: property für autoSilence ergänzen
