@@ -328,7 +328,7 @@ class Metro {
 
     renderPlaylist(playlist) {
         this.domUtil.toggleCssClass(document.getElementById('playlistHeader'), 'hidden', false);
-        this.domUtil.toggleCssClass(document.getElementById('playlistContainer'), 'hidden', false);
+        this.domUtil.toggleCssClass(document.getElementById('playlistTableContainer'), 'hidden', false);
         this.domUtil.toggleCssClass(document.getElementById('playlistPlaceholder'), 'hidden', true);
 
         document.getElementById('playlistTitle').innerText = this.playlist.title;

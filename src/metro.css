@@ -56,15 +56,16 @@ select {
     display: none;
 }
 
-#fileInputLabel {
+.playlist-button {
     border: solid 1px black;
     border-radius: 5px;
     background-color: #b6f8b5;
     padding: 8px 20px;
     display: inline-flex;
+    font-weight: bold;
 }
 
-#fileInputLabel > img {
+.playlist-button > img {
     height: 18px;
     margin-right: 5px;
 }
@@ -74,8 +75,7 @@ select {
 #playlistPlaceholder {
     width: 100%;
     text-align: center;
-    margin-top: 50px;
-    font-size: 20px;
+    margin-top: 100px;
 }
 
 #playlistHeader {

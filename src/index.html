@@ -30,12 +30,12 @@
             <div id="settingsMenu"><img src="./img/settings.svg" alt="Open settings"></div>
         </div>
 
-        <div id="playlistContainer" class="hidden">
-            <div id="playlistHeader">
+        <div id="playlistContainer">
+            <div id="playlistHeader" class="hidden">
                 <h1 id="playlistTitle">Playlist</h1>
                 <p id="playlistSubtitle">x Songs</p>
             </div>
-            <div id="playlistTableContainer">
+            <div id="playlistTableContainer" class="hidden">
                 <table id="playlist">
                     <tr id="playlistRowTemplate">
                         <td class="songNo">1</td>
@@ -46,7 +46,7 @@
                 </table>
             </div>
             <div id="playlistPlaceholder">
-                <a href="#" id="loadPlaylistLink">Load a playlist</a>
+                <span href="#" id="loadPlaylistLink" class="playlist-button"><img src="./img/file-text.svg" alt=""> Load a playlist</span>
             </div>
         </div>
 
@@ -57,7 +57,7 @@
                 <h2>Settings</h2>
             </div>
 
-            <label for="fileInput" id="fileInputLabel"><img src="./img/file-text.svg" alt=""> Load a playlist</label>
+            <label for="fileInput" id="fileInputLabel" class="playlist-button"><img src="./img/file-text.svg" alt=""> Load a playlist</label>
             <input type="file" id="fileInput" accept=".json">
 
             <div class="settings-row">
