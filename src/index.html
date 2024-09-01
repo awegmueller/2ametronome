@@ -7,60 +7,90 @@
     <link rel="stylesheet" href="./metro.css">
 </head>
 <body>
-    <div id="metronome">
-        <div id="currentBar">&nbsp;</div>
-        <div id="currentBeatInBar">0</div>
-        <div id="songInfos"></div>
-    </div>
-    <div id="currentSongInfo">
-        <span id="currentSongNo">&nbsp;</span>
-        <span id="currentSongTitle">Play a song</span>
-        <span id="currentSongBpm">0</span>
-        <span class="bpm-label">bpm</span>
-    </div>
-    <div id="controlButtonBar">
-        <img src="./img/arrow-up.svg" class="control-button disabled" id="previousSongButton" alt="Previous song">
-        <img src="./img/stop-circle-color.svg" class="control-button disabled" id="stopButton" alt="Stop">
-        <img src="./img/play-circle-color.svg" class="control-button disabled" id="pausePlayButton" alt="Pause/play">
-        <img src="./img/arrow-down.svg" class="control-button disabled" id="nextSongButton" alt="Next song">
-    </div>
+    <div id="rootContainer">
 
-    <div id="playlistHeader">
-        <h1 id="playlistTitle">Playlist</h1>
-        <p id="playlistSubtitle">x Songs</p>
-    </div>
+        <div id="metronomeContainer">
+            <div id="metronome">
+                <div id="currentBar">&nbsp;</div>
+                <div id="currentBeatInBar">0</div>
+                <div id="songInfos"></div>
+            </div>
+            <div id="currentSongInfo">
+                <span id="currentSongNo">&nbsp;</span>
+                <span id="currentSongTitle">Always on time</span>
+                <span id="currentSongBpm">0</span>
+                <span class="bpm-label">bpm</span>
+            </div>
+            <div id="controlButtonBar">
+                <img src="./img/arrow-up.svg" class="control-button disabled" id="previousSongButton" alt="Previous song">
+                <img src="./img/stop-circle-color.svg" class="control-button disabled" id="stopButton" alt="Stop">
+                <img src="./img/play-circle-color.svg" class="control-button disabled" id="pausePlayButton" alt="Pause/play">
+                <img src="./img/arrow-down.svg" class="control-button disabled" id="nextSongButton" alt="Next song">
+            </div>
+            <div id="settingsMenu"><img src="./img/settings.svg" alt="Open settings"></div>
+        </div>
 
-    <div id="playlistContainer">
-        <table id="playlist">
-            <tr id="playlistRowTemplate">
-                <td class="songNo">1</td>
-                <td><img src="./img/play-circle-color.svg" class="control-button small playButton" alt="Play song"></td>
-                <td class="songTitle">Foo Bar</td>
-                <td class="songBpm">125 bpm</td>
-            </tr>
-        </table>
-    </div>
+        <div id="playlistContainer" class="hidden">
+            <div id="playlistHeader">
+                <h1 id="playlistTitle">Playlist</h1>
+                <p id="playlistSubtitle">x Songs</p>
+            </div>
+            <div id="playlistTableContainer">
+                <table id="playlist">
+                    <tr id="playlistRowTemplate">
+                        <td class="songNo">1</td>
+                        <td><img src="./img/play-circle-color.svg" class="control-button small playButton" alt="Play song"></td>
+                        <td class="songTitle">Song Title</td>
+                        <td class="songBpm">125 bpm</td>
+                    </tr>
+                </table>
+            </div>
+            <div id="playlistPlaceholder">
+                <a href="#" id="loadPlaylistLink">Load a playlist</a>
+            </div>
+        </div>
 
-    <div id="settingsPopup">
-        <label for="fileInput" id="fileInputLabel"><img src="./img/settings.svg" alt="Settings menu"></label>
-        <input type="file" id="fileInput" accept=".json">
+        <div id="settingsPopup" class="hidden">
 
-        <p class="settings-row">
-        <label>Tone:</label>
-        <input type="radio" name="tone" value="click" id="tone1" checked="checked">
-        <label for="tone1">Click</label>
-        <input type="radio" name="tone" value="sine" id="tone2">
-        <label for="tone2">Sine</label>
-        </p>
+            <div id="settingsHeader">
+                <img src="./img/arrow-left.svg" alt="Back to metronome" id="closeSettingsMenu">
+                <h2>Settings</h2>
+            </div>
 
-        <p class="settings-row">
-        <label for="pitch">Pitch:</label>
-        <select id="pitch">
-            <option value="high">High</option>
-            <option value="default" selected="selected">Default</option>
-            <option value="low">Low</option>
-        </select>
-        </p>
+            <label for="fileInput" id="fileInputLabel"><img src="./img/file-text.svg" alt=""> Load a playlist</label>
+            <input type="file" id="fileInput" accept=".json">
+
+            <div class="settings-row">
+                <label>Tone:</label>
+                <input type="radio" name="tone" value="click" id="tone1" checked="checked">
+                <label for="tone1">Click</label>
+                <input type="radio" name="tone" value="sine" id="tone2">
+                <label for="tone2">Sine</label>
+            </div>
+
+            <div class="settings-row">
+                <label for="pitch">Pitch:</label>
+                <select id="pitch">
+                    <option value="high">High</option>
+                    <option value="default" selected="selected">Default</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+
+            <div class="settings-row">
+                <input type="checkbox" id="autoStopSilenceEnabled">
+                <label for="autoStopSilenceEnabled">Auto-Stop/Silence</label>
+                <p>If checked, the current songs can auto-stop or auto-silence the metronome, according
+                to the properties defined in the playlist. Otherwise, these properties are ignored.</p>
+            </div>
+
+            <div class="settings-row">
+                <input type="checkbox" id="autoPlayEnabled">
+                <label for="autoPlayEnabled">Auto-Play Next/Previous</label>
+                <p>If checked, a song will automatically start to play, when
+                   the next or previous button is clicked.</p>
+            </div>
+        </div>
     </div>
 
     <script src="./metro.js"></script>

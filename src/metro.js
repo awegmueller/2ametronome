@@ -179,8 +179,6 @@ class Metronome {
 // -------------------
 class Metro {
 
-    static PLAYLIST_URL = './playlist.json';
-
     static STATE_PLAYING = 'playing';
     static STATE_PAUSED = 'paused';
     static STATE_STOPPED = 'stopped';
@@ -205,10 +203,21 @@ class Metro {
     }
 
     startup() {
+        this.initDomTemplates();
         this.settings.init();
         this.addEventListeners();
-        this.loadPlaylist()
-            .then(playlist => this.renderPlaylist(playlist));
+        if (this.settings.playlist) {
+            this.setPlaylist(this.settings.playlist);
+        }
+        if (this.settings.songIndex > -1) {
+            this.setCurrentSong(this.songAtIndex(this.settings.songIndex));
+        }
+    }
+
+    initDomTemplates() {
+        // Use cached template or read from DOM when called for the first time
+        this.playlistRowTemplate = document.getElementById('playlistRowTemplate');
+        this.playlistRowTemplate.remove(); // Remove template from DOM
     }
 
     addEventListeners() {
@@ -216,23 +225,32 @@ class Metro {
         document.getElementById('pausePlayButton').addEventListener('click', this.onClickPausePlayButton.bind(this));
         document.getElementById('previousSongButton').addEventListener('click', this.onClickPreviousSongButton.bind(this));
         document.getElementById('nextSongButton').addEventListener('click', this.onClickNextSongButton.bind(this));
+        document.getElementById('loadPlaylistLink').addEventListener('click', this.onClickPlaylistLink.bind(this));
+        document.getElementById('settingsMenu').addEventListener('click', this.onClickSettingsMenu.bind(this));
+        document.getElementById('closeSettingsMenu').addEventListener('click', this.onClickCloseSettingsMenu.bind(this));
     }
 
-    async loadPlaylist() {
-        const response = await fetch(Metro.PLAYLIST_URL);
-        if (!response.ok) { // check if response worked (no 404 errors etc...)
-            throw new Error(response.statusText);
-        }
-        return response.json(); // get JSON from the response; returns a promise, which resolves to this data value
+    onClickSettingsMenu(event) {
+        this.toggleSettingsPopup(true);
+    }
+
+    onClickCloseSettingsMenu(event) {
+        this.toggleSettingsPopup(false);
+    }
+
+    toggleSettingsPopup(settingsVisible) {
+        this.domUtil.toggleCssClass(document.getElementById('metronomeContainer'), 'hidden', settingsVisible);
+        this.domUtil.toggleCssClass(document.getElementById('playlistContainer'), 'hidden', settingsVisible);
+        this.domUtil.toggleCssClass(document.getElementById('settingsPopup'), 'hidden', !settingsVisible);
     }
 
     onSettingsChange(event) {
         if (event.property === 'playlist') {
             if (this.state !== Metro.STATE_STOPPED) {
-                this.setState(Metro.STATE_STOPPED); // FIXME: deal with case that metronome is not initialized yet
+                this.setState(Metro.STATE_STOPPED);
             }
-            this.renderPlaylist(event.value);
-            this.setCurrentSong(Metro.NULL_SONG);
+            this.toggleSettingsPopup(false);
+            this.setPlaylist(event.value);
         } else if (event.property === 'tone') {
             this.metronome.setTone(event.value);
         } else if (event.property === 'pitch') {
@@ -242,7 +260,9 @@ class Metro {
 
     setCurrentSong(currentSong) {
         this.currentSong = currentSong;
+        this.settings.setSongIndex(currentSong.index);
         this.renderCurrentSong();
+        this.renderPausePlayButton();
     }
 
     renderCurrentSong() {
@@ -262,43 +282,67 @@ class Metro {
         let navButtonsDisabled = song === Metro.NULL_SONG;
         this.domUtil.toggleCssClass(document.getElementById('previousSongButton'), 'disabled', navButtonsDisabled);
         this.domUtil.toggleCssClass(document.getElementById('nextSongButton'), 'disabled', navButtonsDisabled);
+
+        let table = document.getElementById('playlist');
+        let trs = table.getElementsByTagName('tr');
+        for (let i = 0; i < trs.length; i++) {
+            this.domUtil.toggleCssClass(trs[i], 'now-playing', song.index === i);
+        }
+    }
+
+    setPlaylist(playlist) {
+        console.log('setPlaylist', playlist);
+        this.playlist = playlist;
+        playlist.songs.forEach((song, i) => this.initSong(song, i));
+        this.renderPlaylist();
+        this.setCurrentSong(this.songAtIndex(0));
+    }
+
+    initSong(song, songIndex) {
+        if (!song.title) {
+            throw new Error('playlist.json: missing mandatory "title" attribute');
+        }
+        if (!song.bpm) {
+            throw new Error('playlist.json: missing mandatory "bpm" attribute');
+        }
+        song.index = songIndex; // Append property 'index' (not configured)
+        if (!song.measure) {
+            song.measure = Metro.DEFAULT_MEASURE;
+        }
+        if (!song.duration) {
+            song.duration = Metro.DEFAULT_DURATION;
+        }
+        this.initSongDurationInSeconds(song);
+    }
+
+    initSongDurationInSeconds(song) {
+        let duration = song.duration;
+        let parts = duration.split(":");
+        if (parts.length !== 2) {
+            throw new Error('Illegal format for duration. Expected: mm:ss, actual=' + duration);
+        }
+        let minutes = parseInt(parts[0]);
+        let seconds = parseInt(parts[1]);
+        song.durationInSeconds = minutes * 60 + seconds;
     }
 
     renderPlaylist(playlist) {
-        console.log('Playlist loaded', playlist);
-        this.playlist = playlist;
+        this.domUtil.toggleCssClass(document.getElementById('playlistHeader'), 'hidden', false);
+        this.domUtil.toggleCssClass(document.getElementById('playlistContainer'), 'hidden', false);
+        this.domUtil.toggleCssClass(document.getElementById('playlistPlaceholder'), 'hidden', true);
 
-        // Use cached template or read from DOM when called for the first time
-        if (!this.playlistRowTemplate) {
-            this.playlistRowTemplate = document.getElementById('playlistRowTemplate');
-            this.playlistRowTemplate.remove(); // Remove template from DOM
-        }
-
-        document.getElementById('playlistTitle').innerText = playlist.title;
+        document.getElementById('playlistTitle').innerText = this.playlist.title;
         let tableBody = document.querySelector('#playlist > tbody');
 
         // Remove existing rows
         this.domUtil.elementsByTagName(tableBody, 'tr').forEach(tr => tr.remove());
 
         // Add new rows
-        let numSongs = playlist.songs.length;
+        let songs = this.playlist.songs;
+        let numSongs = songs.length;
         let duration = 0;
         for (let i = 0; i < numSongs; i++) {
-            let song = playlist.songs[i];
-            if (!song.title) {
-                throw new Error('playlist.json: missing mandatory "title" attribute');
-            }
-            if (!song.bpm) {
-                throw new Error('playlist.json: missing mandatory "bpm" attribute');
-            }
-            song.index = i; // Append property 'index' (not configured)
-            if (!song.measure) {
-                song.measure = Metro.DEFAULT_MEASURE;
-            }
-            if (!song.duration) {
-                song.duration = Metro.DEFAULT_DURATION;
-            }
-            this.setDurationInSeconds(song);
+            let song = songs[i];
             let row = this.playlistRowTemplate.cloneNode(true);
             row.removeAttribute('id');
             row.getElementsByClassName('songNo')[0].innerText = i + 1;
@@ -306,7 +350,6 @@ class Metro {
             row.getElementsByClassName('songBpm')[0].innerText = this.labelBpm(song.bpm);
             row.getElementsByClassName('playButton')[0].addEventListener('click',
                 this.onClickPlaySong.bind(this, i));
-
             tableBody.appendChild(row);
             duration += song.durationInSeconds;
         }
@@ -326,31 +369,17 @@ class Metro {
         return '' + number;
     }
 
-    setDurationInSeconds(song) {
-        let duration = song.duration;
-        let parts = duration.split(":");
-        if (parts.length !== 2) {
-            throw new Error('Illegal format for duration. Expected: mm:ss, actual=' + duration);
-        }
-        let minutes = parseInt(parts[0]);
-        let seconds = parseInt(parts[1]);
-        song.durationInSeconds = minutes * 60 + seconds;
-    }
-
     onClickPlaySong(songIndex) {
         this.playSong(songIndex);
     }
 
+    songAtIndex(songIndex) {
+        return this.playlist.songs[songIndex];
+    }
+
     playSong(songIndex) {
-        let song = this.playlist.songs[songIndex];
+        let song = this.songAtIndex(songIndex);
         this.setCurrentSong(song);
-
-        let table = document.getElementById('playlist');
-        let trs = table.getElementsByTagName('tr');
-        for (let i = 0; i < trs.length; i++) {
-            this.domUtil.toggleCssClass(trs[i], 'now-playing', song.index === i);
-        }
-
         this.newMetronome(song.bpm);
         this.setState(Metro.STATE_PLAYING);
     }
@@ -360,6 +389,8 @@ class Metro {
             this.metronome.stop();
         }
         this.metronome = new Metronome(bpm, this.onBeatChange.bind(this));
+        this.metronome.setTone(this.settings.tone);
+        this.metronome.setPitch(this.settings.pitch);
         this.metronome.start();
     }
 
@@ -406,6 +437,10 @@ class Metro {
         return element.getAttribute('class').indexOf('disabled') > -1;
     }
 
+    onClickPlaylistLink(event) {
+        document.getElementById('fileInput').click();
+    }
+
     onClickPreviousSongButton(event) {
         if (this.isButtonDisabled(event.target)) {
             return;
@@ -414,8 +449,7 @@ class Metro {
         if (index < 0) {
             index = this.playlist.songs.length - 1;
         }
-        this.playSong(index);
-        this.scrollSongIntoView(index);
+        this.navigateToSong(index);
     }
 
     onClickNextSongButton(event) {
@@ -426,7 +460,18 @@ class Metro {
         if (index >= this.playlist.songs.length) {
             index = 0;
         }
-        this.playSong(index);
+        this.navigateToSong(index);
+    }
+
+    navigateToSong(index) {
+        if (this.settings.autoPlayEnabled) {
+            this.playSong(index);
+        } else {
+            if (this.state !== Metro.STATE_STOPPED) {
+                this.setState(Metro.STATE_STOPPED);
+            }
+            this.setCurrentSong(this.songAtIndex(index));
+        }
         this.scrollSongIntoView(index);
     }
 
@@ -446,6 +491,7 @@ class Metro {
         if (this.state === Metro.STATE_PLAYING) {
             this.setState(Metro.STATE_PAUSED);
         } else if (this.state === Metro.STATE_PAUSED || this.state === Metro.STATE_STOPPED) {
+            this.newMetronome(this.currentSong.bpm);
             this.setState(Metro.STATE_PLAYING);
         }
     }
@@ -458,7 +504,7 @@ class Metro {
 
     renderPausePlayButton() {
         let $pausePlayButton = document.getElementById('pausePlayButton');
-        let disabled = !this.currentSong;
+        let disabled = this.currentSong === Metro.NULL_SONG;
         this.domUtil.toggleCssClass($pausePlayButton, 'disabled', disabled);
         if (this.state === Metro.STATE_PLAYING) {
             $pausePlayButton.setAttribute('src', './img/pause-circle-color.svg')
@@ -473,6 +519,9 @@ class Metro {
     onBeatChange(beat, bar, beatInBar, running) {
         this.renderBeat(beat, bar, beatInBar, running)
 
+        if (!this.settings.autoStopSilenceEnabled) {
+            return;
+        }
         if (this.currentSong.autoStop && (bar + 1) > this.currentSong.autoStop) {
             this.setState(Metro.STATE_STOPPED);
         }
@@ -515,9 +564,12 @@ class MetroSettings {
 
     constructor(callback) {
         this.callback = callback;
-        this.playlist = null; // TODO: use correct initial value
+        this.playlist = null;
+        this.songIndex = -1;
         this.tone = MetroSettings.TONE_CLICK;
         this.pitch = MetroSettings.PITCH_DEFAULT;
+        this.autoPlayEnabled = true;
+        this.autoStopSilenceEnabled = true;
     }
 
     init() {
@@ -527,10 +579,16 @@ class MetroSettings {
             this.playlist = settings.playlist;
             this.tone = settings.tone;
             this.pitch = settings.pitch;
+            this.songIndex = settings.songIndex;
+            this.autoPlayEnabled = settings.autoPlayEnabled;
+            this.autoStopSilenceEnabled = settings.autoStopSilenceEnabled;
         } else {
             this.storeSettings();
         }
         this.checkRadio(this.tone);
+        this.selectOption(this.pitch);
+        this.checkCheckbox('autoPlayEnabled', this.autoPlayEnabled);
+        this.checkCheckbox('autoStopSilenceEnabled', this.autoStopSilenceEnabled);
         this.addEventListeners();
     }
 
@@ -542,21 +600,34 @@ class MetroSettings {
         })
     }
 
+    checkCheckbox(elementId, value) {
+        document.getElementById(elementId).checked = value;
+    }
+
+    selectOption(value) {
+        document.querySelectorAll('option').forEach(option => {
+            option.selected = option.value === value;
+        })
+    }
+
     storeSettings() {
         localStorage.setItem('settings', JSON.stringify({
             playlist: this.playlist,
+            songIndex: this.songIndex,
             tone: this.tone,
-            pitch: this.pitch
+            pitch: this.pitch,
+            autoPlayEnabled: this.autoPlayEnabled,
+            autoStopSilenceEnabled: this.autoStopSilenceEnabled
         }));
     }
 
     addEventListeners() {
         document.getElementById('fileInput').addEventListener('change', this.onFileInputChange.bind(this));
-
         document.querySelectorAll('input[type="radio"]').forEach(radio =>
             radio.addEventListener('change', this.onToneRadioChange.bind(this)));
-
         document.getElementById('pitch').addEventListener('change', this.onPitchChange.bind(this));
+        document.getElementById('autoPlayEnabled').addEventListener('change', this.onCheckboxChange.bind(this));
+        document.getElementById('autoStopSilenceEnabled').addEventListener('change', this.onCheckboxChange.bind(this));
     }
 
     onPitchChange(event) {
@@ -581,6 +652,17 @@ class MetroSettings {
         })
     }
 
+    onCheckboxChange(event) {
+        let checkbox = event.target;
+        console.log('Checkbox ' + checkbox.id + ' checked', checkbox.checked);
+        this[checkbox.id] = checkbox.checked;
+        this.storeSettings();
+        this.callback({
+            property: checkbox.id,
+            value: checkbox.checked
+        })
+    }
+
     onFileInputChange(event) {
         let file = event.target.files[0];
         if (file) {
@@ -601,17 +683,25 @@ class MetroSettings {
             reader.readAsText(file);
         }
     }
+
+    setSongIndex(songIndex) {
+        this.songIndex = songIndex;
+        this.storeSettings();
+    }
 }
 
 let metro = new Metro();
 metro.startup();
 
-// TODO: GUI drehbar landscape/portrait
-// TODO: Playlist im local storage persistieren
 // TODO: countIn anders visualisieren (grün) und andere töne
 // TODO: Fortschrittsbalken (Dauer)
-// TODO: autoStop ein/aus (Checkbox)
+// TODO: build / class-files separieren
 
+// DONE: Setup-Screen
+// DONE: GUI drehbar landscape/portrait
+// DONE: autoStop ein/aus (Settings)
+// DONE: initial selektierten song korrekt darstellen und buttons enablen
+// DONE: Playlist im local storage persistieren
 // DONE: Töne konfigurierbar(-er)
 // DONE: Playlist hochladen, Metro#setPlaylist implementieren
 // DONE: autoStop anzeigen

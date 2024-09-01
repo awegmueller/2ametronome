@@ -1,3 +1,7 @@
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: Arial, sans-serif;
     font-size: 16px;
@@ -8,11 +12,44 @@ div {
     box-sizing: border-box;
 }
 
+#rootContainer {
+    height: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
 /* ---- SETTINGS ---- */
-#settingsPopup {
+#settingsMenu {
     position: absolute;
-    left: 265px;
     top: 10px;
+    right: 10px;
+}
+
+#settingsPopup {
+    margin: 20px;
+}
+
+#settingsHeader {
+    display: flex;
+}
+
+#settingsHeader > img {
+    margin-right: 10px;
+    width: 30px;
+}
+
+.settings-row {
+    margin-top: 20px;
+}
+
+.settings-row > p {
+    font-size: 14px;
+}
+
+select {
+    font-size: 16px;
 }
 
 #fileInput {
@@ -20,14 +57,30 @@ div {
 }
 
 #fileInputLabel {
-    opacity: 0.5;
+    border: solid 1px black;
+    border-radius: 5px;
+    background-color: #b6f8b5;
+    padding: 8px 20px;
+    display: inline-flex;
+}
+
+#fileInputLabel > img {
+    height: 18px;
+    margin-right: 5px;
 }
 
 /* ---- PLAYLIST ---- */
 
+#playlistPlaceholder {
+    width: 100%;
+    text-align: center;
+    margin-top: 50px;
+    font-size: 20px;
+}
+
 #playlistHeader {
     background-image: linear-gradient(#FFFFFF 0%, #FFFFFF 70%, #ededed 100%);
-    width: 300px;
+    width: 100%;
 }
 
 #playlistTitle {
@@ -40,13 +93,13 @@ div {
     margin-bottom: 8px;
 }
 
-#playlistContainer {
+#playlistTableContainer {
     overflow-y: scroll;
     max-height: 240px;
 }
 
 #playlist {
-    width: 300px;
+    width: 100%;
     white-space: nowrap;
     border-collapse: collapse;
 }
@@ -73,7 +126,6 @@ tr.now-playing > td {
 /* ---- CURRENT SONG INFO ---- */
 #currentSongInfo {
     background-color: #BBB;
-    width: 300px;
     font-weight: bold;
     font-size: 20px;
     display: flex;
@@ -97,10 +149,12 @@ tr.now-playing > td {
 }
 
 /* ---- METRONOME ---- */
+#metronomeContainer {
+    position: relative;
+}
+
 #metronome {
     border: solid 2px black;
-    width: 300px;
-    height: 300px;
     position: relative;
 }
 
@@ -144,7 +198,6 @@ tr.now-playing > td {
 
 /* ---- CONTROL BUTTON BAR ---- */
 #controlButtonBar {
-    width: 300px;
     display: flex;
     border-bottom: solid 2px grey;
     justify-content: space-between;
@@ -170,3 +223,32 @@ tr.now-playing > td {
     cursor: pointer;
 }
 
+/* ---- MEDIA QUERIES ---- */
+
+/* Portrait Mode */
+@media only screen and (orientation: portrait) {
+    #metronome {
+        height: 320px;
+    }
+}
+
+/* Landscape Mode */
+@media only screen and (orientation: landscape) {
+    #rootContainer {
+        display: flex;
+    }
+    #metronomeContainer {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+    }
+    #metronome {
+        flex-grow: 1;
+    }
+    #playlistContainer {
+        width: 50%;
+    }
+    #controlButtonBar {
+        border-bottom: none;
+    }
+}
