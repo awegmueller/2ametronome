@@ -33,13 +33,12 @@
         <div id="playlistContainer">
             <div id="playlistHeader" class="hidden">
                 <h1 id="playlistTitle">Playlist</h1>
-                <p id="playlistSubtitle">x Songs</p>
+                <div id="playlistSubtitle">x Songs</div>
             </div>
             <div id="playlistTableContainer" class="hidden">
                 <table id="playlist">
-                    <tr id="playlistRowTemplate">
+                    <tr id="playlistRowTemplate" class="playlist-row">
                         <td class="songNo">1</td>
-                        <td><img src="./img/play-circle-color.svg" class="control-button small playButton" alt="Play song"></td>
                         <td class="songTitle">Song Title</td>
                         <td class="songBpm">125 bpm</td>
                     </tr>
@@ -58,7 +57,7 @@
             </div>
 
             <label for="fileInput" id="fileInputLabel" class="playlist-button"><img src="./img/file-text.svg" alt=""> Load a playlist</label>
-            <input type="file" id="fileInput" accept=".json">
+            <input type="file" id="fileInput" accept="application/json">
 
             <div class="settings-row">
                 <label>Tone:</label>

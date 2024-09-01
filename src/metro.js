@@ -212,6 +212,10 @@ class Metro {
         if (this.settings.songIndex > -1) {
             this.setCurrentSong(this.songAtIndex(this.settings.songIndex));
         }
+        let container = document.getElementById('playlistTableContainer');
+        let playlistMaxHeight = window.innerHeight - container.getBoundingClientRect().top;
+        console.log(playlistMaxHeight);
+        container.setAttribute('style', 'max-height:' + playlistMaxHeight + 'px');
     }
 
     initDomTemplates() {
@@ -348,8 +352,7 @@ class Metro {
             row.getElementsByClassName('songNo')[0].innerText = i + 1;
             row.getElementsByClassName('songTitle')[0].innerText = song.title;
             row.getElementsByClassName('songBpm')[0].innerText = this.labelBpm(song.bpm);
-            row.getElementsByClassName('playButton')[0].addEventListener('click',
-                this.onClickPlaySong.bind(this, i));
+            row.addEventListener('click', this.onClickPlaySong.bind(this, i));
             tableBody.appendChild(row);
             duration += song.durationInSeconds;
         }
@@ -693,6 +696,7 @@ class MetroSettings {
 let metro = new Metro();
 metro.startup();
 
+// FIXME: device rotation, max-height: https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
 // TODO: countIn anders visualisieren (grün) und andere töne
 // TODO: Fortschrittsbalken (Dauer)
 // TODO: build / class-files separieren

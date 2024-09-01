@@ -4,6 +4,7 @@ html, body {
 
 body {
     font-family: Arial, sans-serif;
+    user-select: none;
     font-size: 16px;
     margin: 0;
 }
@@ -81,6 +82,7 @@ select {
 #playlistHeader {
     background-image: linear-gradient(#FFFFFF 0%, #FFFFFF 70%, #ededed 100%);
     width: 100%;
+    padding: 2px 8px;
 }
 
 #playlistTitle {
@@ -89,19 +91,25 @@ select {
 }
 
 #playlistSubtitle {
-    margin-top: 0;
-    margin-bottom: 8px;
 }
 
 #playlistTableContainer {
     overflow-y: scroll;
-    max-height: 240px;
 }
 
 #playlist {
     width: 100%;
     white-space: nowrap;
     border-collapse: collapse;
+}
+
+.playlist-row > td {
+    height: 34px;
+    border-bottom: solid 1px #ccc;
+}
+
+.playlist-row.now-playing > td {
+    border-bottom-color: #b69120;
 }
 
 .songTitle {
@@ -113,10 +121,12 @@ select {
 .songNo {
     font-weight: bold;
     font-size: 20px;
+    padding-left: 8px;
 }
 
 .songBpm {
     text-align: right;
+    padding-right: 8px;
 }
 
 tr.now-playing > td {
@@ -199,6 +209,7 @@ tr.now-playing > td {
 /* ---- CONTROL BUTTON BAR ---- */
 #controlButtonBar {
     display: flex;
+    padding: 0 10px;
     border-bottom: solid 2px grey;
     justify-content: space-between;
     background-color: #f8f8f8;
@@ -247,8 +258,17 @@ tr.now-playing > td {
     }
     #playlistContainer {
         width: 50%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    #playlistTableContainer {
+        max-height: unset !important;
     }
     #controlButtonBar {
         border-bottom: none;
+    }
+    #currentSongInfo, #controlButtonBar {
+        border-right: solid 2px black;
     }
 }
