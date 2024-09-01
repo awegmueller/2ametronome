@@ -204,6 +204,7 @@ class Metro {
 
     startup() {
         this.initDomTemplates();
+        this.updatePlaylistMaxHeight();
         this.settings.init();
         this.addEventListeners();
         if (this.settings.playlist) {
@@ -212,10 +213,13 @@ class Metro {
         if (this.settings.songIndex > -1) {
             this.setCurrentSong(this.songAtIndex(this.settings.songIndex));
         }
+    }
+
+    updatePlaylistMaxHeight() {
         let container = document.getElementById('playlistTableContainer');
-        let playlistMaxHeight = window.innerHeight - container.getBoundingClientRect().top;
-        console.log(playlistMaxHeight);
+        let playlistMaxHeight = Math.floor(window.innerHeight - container.getBoundingClientRect().top);
         container.setAttribute('style', 'max-height:' + playlistMaxHeight + 'px');
+        console.log('Set playlist max-height', playlistMaxHeight);
     }
 
     initDomTemplates() {
@@ -232,6 +236,14 @@ class Metro {
         document.getElementById('loadPlaylistLink').addEventListener('click', this.onClickPlaylistLink.bind(this));
         document.getElementById('settingsMenu').addEventListener('click', this.onClickSettingsMenu.bind(this));
         document.getElementById('closeSettingsMenu').addEventListener('click', this.onClickCloseSettingsMenu.bind(this));
+
+        let deviceRotationHandler = this.onDeviceRotation.bind(this);
+        window.addEventListener('resize', deviceRotationHandler, false);
+        window.addEventListener('orientationchange', deviceRotationHandler, false);
+    }
+
+    onDeviceRotation(event) {
+        this.updatePlaylistMaxHeight();
     }
 
     onClickSettingsMenu(event) {
@@ -696,11 +708,12 @@ class MetroSettings {
 let metro = new Metro();
 metro.startup();
 
-// FIXME: device rotation, max-height: https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
+// TODO: manifest.json ausprobieren für fullscreen?
 // TODO: countIn anders visualisieren (grün) und andere töne
 // TODO: Fortschrittsbalken (Dauer)
 // TODO: build / class-files separieren
 
+// DONE: device rotation, max-height: https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
 // DONE: Setup-Screen
 // DONE: GUI drehbar landscape/portrait
 // DONE: autoStop ein/aus (Settings)
