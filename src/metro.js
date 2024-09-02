@@ -42,12 +42,12 @@ class DomUtil {
 class Metronome {
 
     static BEATS_PER_BAR = 4;  // TODO: interpret 'measure' from song
+    static SCHEDULING_INTERVAL = 25; // [ms] How frequently to call scheduling function (in milliseconds)
+    static SCHEDULE_AHEAD_TIME = 0.1; // [s] How far ahead to schedule audio (sec)
 
     constructor(bpm, callback) {
         this.audioContext = null;
         this.bpm = bpm;
-        this.lookahead = 25;          // How frequently to call scheduling function (in milliseconds)
-        this.scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
         this.nextNoteTime = 0.0;      // When the next note is due
         this.isRunning = false;
         this.intervalID = null;
@@ -58,6 +58,7 @@ class Metronome {
 
         this.currentBeatInBar = 0;
         this.currentBeat = 0; // Overall beats since start
+        this.loopDetection = 0;
     }
 
     nextTone() {
@@ -129,12 +130,23 @@ class Metronome {
         gainNode.connect(this.audioContext.destination);
 
         osc.start(); // TODO: use time parameter
-        osc.stop(this.audioContext.currentTime + duration / 1000); // duration in seconds
+        osc.stop(this.audioContext.currentTime + duration / 1000); // Duration in seconds
     }
 
     scheduler() {
-        // while there are notes that will need to play before the next interval, schedule them and advance the pointer.
-        while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
+        // This can happen on some smartphone browsers (like Chrome on Android), if the AudioContext is initialized
+        // too fast or too often. It should not happen anymore, because we now call the #close method. But you never know...
+        if (this.audioContext.currentTime === 0) {
+            this.loopDetection++;
+            if (this.loopDetection === 25) {
+                let errorMessage = 'Sorry, the audio system appears to be broken. Please reload this app / page.';
+                alert(errorMessage);
+                throw new Error(errorMessage);
+            }
+        }
+
+        // While there are notes that will need to play before the next interval, schedule them and advance the pointer.
+        while (this.nextNoteTime < this.audioContext.currentTime + Metronome.SCHEDULE_AHEAD_TIME) {
             this.scheduleTone(this.currentBeat, this.currentBeatInBar, this.nextNoteTime);
             this.nextTone();
         }
@@ -149,9 +161,14 @@ class Metronome {
         }
         this.isRunning = true;
         this.nextNoteTime = this.audioContext.currentTime + 0.05;
-        this.intervalID = setInterval(() => this.scheduler(), this.lookahead);
+        this.intervalID = setInterval(() => this.scheduler(), Metronome.SCHEDULING_INTERVAL);
     }
 
+    dispose() {
+        this.stop();
+        this.audioContext.close();
+    }
+    
     stop(reset = false) {
         if (reset) {
             this.currentBeat = 0;
@@ -204,7 +221,6 @@ class Metro {
 
     startup() {
         this.initDomTemplates();
-        this.updatePlaylistMaxHeight();
         this.settings.init();
         this.addEventListeners();
         if (this.settings.playlist) {
@@ -213,6 +229,7 @@ class Metro {
         if (this.settings.songIndex > -1) {
             this.setCurrentSong(this.songAtIndex(this.settings.songIndex));
         }
+        this.updatePlaylistMaxHeight();
     }
 
     updatePlaylistMaxHeight() {
@@ -240,8 +257,22 @@ class Metro {
         let deviceRotationHandler = this.onDeviceRotation.bind(this);
         window.addEventListener('resize', deviceRotationHandler, false);
         window.addEventListener('orientationchange', deviceRotationHandler, false);
+
+        window.addEventListener('keyup', this.onKeyupWindow.bind(this));
     }
 
+    onKeyupWindow(event) {
+        if (event.keyCode === 80) { // P
+            this.onClickPreviousSongButton(); 
+        } else if (event.keyCode === 78) { // N
+            this.onClickNextSongButton(); 
+        } else if (event.keyCode === 32) { // Space
+            this.onClickPausePlayButton();
+        } else if (event.keyCode === 83) { // S
+            this.onClickStopButton();
+        }
+    }
+    
     onDeviceRotation(event) {
         this.updatePlaylistMaxHeight();
     }
@@ -401,12 +432,11 @@ class Metro {
 
     newMetronome(bpm) {
         if (this.metronome) {
-            this.metronome.stop();
+            this.metronome.dispose();
         }
         this.metronome = new Metronome(bpm, this.onBeatChange.bind(this));
         this.metronome.setTone(this.settings.tone);
         this.metronome.setPitch(this.settings.pitch);
-        this.metronome.start();
     }
 
     setState(state) {
@@ -448,8 +478,9 @@ class Metro {
         trs[songIndex].scrollIntoView();
     }
 
-    isButtonDisabled(element) {
-        return element.getAttribute('class').indexOf('disabled') > -1;
+    isButtonDisabled(buttonId) {
+        let button = document.getElementById(buttonId);
+        return button.getAttribute('class').indexOf('disabled') > -1;
     }
 
     onClickPlaylistLink(event) {
@@ -457,7 +488,7 @@ class Metro {
     }
 
     onClickPreviousSongButton(event) {
-        if (this.isButtonDisabled(event.target)) {
+        if (this.isButtonDisabled('previousSongButton')) {
             return;
         }
         let index = this.currentSong.index - 1;
@@ -468,7 +499,7 @@ class Metro {
     }
 
     onClickNextSongButton(event) {
-        if (this.isButtonDisabled(event.target)) {
+        if (this.isButtonDisabled('nextSongButton')) {
             return;
         }
         let index = this.currentSong.index + 1;
@@ -491,7 +522,7 @@ class Metro {
     }
 
     onClickStopButton(event) {
-        if (this.isButtonDisabled(event.target)) {
+        if (this.isButtonDisabled('stopButton')) {
             return;
         }
         if (this.state === Metro.STATE_PLAYING || this.state === Metro.STATE_PAUSED) {
@@ -500,7 +531,7 @@ class Metro {
     }
 
     onClickPausePlayButton(event) {
-        if (this.isButtonDisabled(event.target)) {
+        if (this.isButtonDisabled('pausePlayButton')) {
             return;
         }
         if (this.state === Metro.STATE_PLAYING) {
