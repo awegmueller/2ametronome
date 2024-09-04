@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>2AMetronome - How-To Make a Playlist</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="./metro.css">
+</head>
+<body>
+  <div class="content-container">
+    <h1>How-To Make a Playlist</h1>
+
+    <p>This guide shows you how to make your own playlist for the <em>2AMetronome</em> app.</p>
+
+    <p>To keep things simple (for me as the programmer) the app offers no functionality
+      to create or manage a playlist. Instead it relies on a simple text file in the JSON 
+      format. JSON may be already familiar to you, but if not: don't worry. It is easy to learn.
+    </p>
+
+    <h2>Example Playlist</h2>
+
+    <p>Here you see an example for a playlist file:</p>
+
+    <pre>
+{
+  "title": "Demo Playlist",
+  "songs": [
+    {
+      "title": "Echoes of Tomorrow",
+      "bpm": 128,
+      "duration": "3:26"
+    },
+    {
+      "title": "Dancing Shadows",
+      "bpm": 165,
+      "autoStop": 10,
+      "duration": "2:35"
+    },
+    {
+      "title": "Silent Symphony",
+      "bpm": 72,
+      "autoSilence": 10,
+      "duration": "3:31"
+    }
+  ]
+}
+    </pre>
+    <div class="code-caption">my-playlist.json</div>
+
+    <p>You could start a simple text editor, like <em>Notepad</em> on a Windows PC, copy the contents above 
+      into the notepad and save the file as <em>my-playlist.json</em> - et voilà: you have made a valid 
+      playlist to load into the 2AMetronome app.</p>
+
+    <p>It is important to use a text application (like Notepad) and not a word processor (like Word), 
+      since a plain text file is required. You can also use online text editors like 
+      <a href="https://jsoneditoronline.org/classic/" target="_blank">JSON Editor Online</a>.</p>
+
+    <p>How the JSON format works is explained in detail 
+      <a href="https://javascript.plainenglish.io/json-in-plain-english-a59fe38c9bea" target="_blank">here</a>.</p>
+
+    <p>However, to make a playlist you don't have to read the manual. Let's have a look at the example
+      above and see what's in the file. The playlist has a <span class="keyword">title</span>, which is "Demo Playlist". 
+      It defines a list (or an array) with three songs. The list starts with a <span class="keyword">[</span> character 
+      and ends with a <span class="keyword">]</span> character. Every song in the list is followed by a comma    
+      <span class="keyword">,</span> character - except the last one.
+    </p>
+
+    <h2>Song properties</h2>
+
+    <p>Each song requires at least these two properties: <span class="keyword">title</span> and 
+      <span class="keyword">bpm</span>. Note that every property (the word on the left side of the colon 
+      <span class="keyword">:</span>) in the file must start and end with a double quote <span class="keyword">"</span>. 
+      The following properties are optional, here's what they do:
+      <ul>
+        <li><span class="keyword">duration</span>: Format: m:ss (minutes:seconds), the play time of the song. 2AMetronome 
+          sums the duration of each song and shows the overall playtime of your playlist.
+        </li>
+        <li><span class="keyword">autoStop</span>: number of bars. 2AMetronome stops automatically after that number of 
+          bars.</li>
+        <li><span class="keyword">autoSilence</span>: number of bars. 2AMetronome makes no more noises after that number 
+          of bars but continues to blink, to give you visual feedback.</li>
+      </ul>
+    </p>
+
+    <h2>Load a Playlist on a Smartphone</h2>
+
+    <p>In case you wonder how to load your playlist file on a smartphone: you could send the file
+      by e-mail, or with a messenger app to your smartphone. On your smartphone, store the playlist 
+      file on the file system (for instance in the <em>Download</em> folder). Or you could store the 
+      file in Google Drive, Dropbox or another cloud file storage, and choose the file from that location.
+    </p>
+
+  </div>
+</body>
+</html>  

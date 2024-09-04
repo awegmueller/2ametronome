@@ -138,7 +138,7 @@ class Metronome {
         // too fast or too often. It should not happen anymore, because we now call the #close method. But you never know...
         if (this.audioContext.currentTime === 0) {
             this.loopDetection++;
-            if (this.loopDetection === 25) {
+            if (this.loopDetection === 100) {
                 let errorMessage = 'Sorry, the audio system appears to be broken. Please reload this app / page.';
                 alert(errorMessage);
                 throw new Error(errorMessage);
@@ -608,6 +608,29 @@ class MetroSettings {
     static PITCH_DEFAULT = 'default';
     static PITCH_LOW = 'low';
 
+    static DEMO_PLAYLIST = {
+        title: 'Demo Playlist',
+        songs: [
+            {
+                title: 'Echoes of Tomorrow',
+                bpm: 128,
+                duration: '3:26'
+            },
+            {
+                title: 'Dancing Shadows',
+                bpm: 165,
+                autoStop: 10,
+                duration: '2:35'
+            },
+            {
+                title: 'Silent Symphony',
+                bpm: 72,
+                autoSilence: 10,
+                duration: '3:31'
+            }
+        ]
+    };
+
     constructor(callback) {
         this.callback = callback;
         this.playlist = null;
@@ -674,6 +697,11 @@ class MetroSettings {
         document.getElementById('pitch').addEventListener('change', this.onPitchChange.bind(this));
         document.getElementById('autoPlayEnabled').addEventListener('change', this.onCheckboxChange.bind(this));
         document.getElementById('autoStopSilenceEnabled').addEventListener('change', this.onCheckboxChange.bind(this));
+        document.getElementById('loadDemoPlaylistLink').addEventListener('click', this.onClickLoadDemoPlaylistLink.bind(this));
+    }
+
+    onClickLoadDemoPlaylistLink(event) {
+        this.setPlaylist(MetroSettings.DEMO_PLAYLIST);
     }
 
     onPitchChange(event) {
@@ -716,18 +744,22 @@ class MetroSettings {
             reader.onload = (event) => {
                 try {
                     let playlist = JSON.parse(event.target.result);
-                    this.playlist = playlist;
-                    this.storeSettings();
-                    this.callback({
-                        property: 'playlist',
-                        value: playlist
-                    });
+                    this.setPlaylist(playlist);
                 } catch (error) {
                     console.error('Failed to parse playlist JSON', error);
                 }
             };
             reader.readAsText(file);
         }
+    }
+
+    setPlaylist(playlist) {
+        this.playlist = playlist;
+        this.storeSettings();
+        this.callback({
+            property: 'playlist',
+            value: playlist
+        });
     }
 
     setSongIndex(songIndex) {
@@ -744,6 +776,7 @@ metro.startup();
 // TODO: Fortschrittsbalken (Dauer)
 // TODO: build / class-files separieren
 
+// TODO: How-to für Playlist.json
 // DONE: device rotation, max-height: https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
 // DONE: Setup-Screen
 // DONE: GUI drehbar landscape/portrait
