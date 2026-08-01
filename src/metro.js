@@ -41,7 +41,7 @@ class DomUtil {
 
 class Metronome {
 
-    static VERSION = 1.0;
+    static VERSION = '1.0';
 
     static BEATS_PER_BAR = 4;  // TODO: interpret 'measure' from song
     static SCHEDULING_INTERVAL = 25; // [ms] How frequently to call scheduling function (in milliseconds)
@@ -805,7 +805,13 @@ class MetroSettings {
         this.selectOption(this.pitch);
         this.checkCheckbox('autoPlayEnabled', this.autoPlayEnabled);
         this.checkCheckbox('autoStopSilenceEnabled', this.autoStopSilenceEnabled);
+        this.renderVersion();
         this.addEventListeners();
+    }
+
+    renderVersion() {
+        let $versionInfo = document.getElementById('versionInfo');
+        $versionInfo.innerText = 'Version ' + Metronome.VERSION;
     }
 
     checkRadio(value) {

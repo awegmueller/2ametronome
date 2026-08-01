@@ -67,7 +67,7 @@ an inline `max-height` for `#playlistTableContainer` from `window.innerHeight` o
 `max-height: unset !important`.
 
 `#separator` between the two main containers is draggable (Pointer Events, so mouse and touch share
-one code path) and resizes them. Neither container may become smaller than `Metro.SPLIT_MIN` (25 %) of
+one code path) and resizes them. Neither container may become smaller than `Metro.SPLIT_MIN` (33 %) of
 the size the app has on the device — `window.innerHeight` in portrait, `window.innerWidth` in landscape,
 *not* a share of the two containers' own sizes. `clampSplitSize()` enforces that in pixels, and falls
 back to an even split when both minimums do not fit (possible in a small desktop browser window).

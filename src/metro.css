@@ -1,5 +1,6 @@
 :root {
     --control-bg-color: #f8f8f8;
+    --font-size-small: 14px;
 }
 
 html, body {
@@ -70,7 +71,12 @@ div {
 }
 
 .settings-row > p {
-    font-size: 14px;
+    font-size: var(--font-size-small);
+}
+
+#versionInfo {
+    font-size: var(--font-size-small);
+    opacity: 0.5;
 }
 
 select {
@@ -229,7 +235,7 @@ tr.now-playing > td {
     bottom: 10px;
     width: 100%;
     text-align: center;
-    font-size: 14px;
+    font-size: var(--font-size-small);
     color: black;
     opacity: 0.5;
 }
