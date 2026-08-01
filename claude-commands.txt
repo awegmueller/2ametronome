@@ -1,0 +1,24 @@
+----
+
+Implement a new feature. The user must be able to control the size of the two main sections in the GUI:
+- the 'metronomeContainer' and
+- the 'playlistContainer'
+
+Add a separator between these containers (or DIVs in the DOM).
+The separator should have a visual hint in the UI, so that the user sees that it is draggable.
+Use a suitable SVG icon for that.
+When the user drags the separator the size of the two DIVs should change accordingly.
+There should be a minimum size for the two DIVs: 25% of the available size.
+The feature must work in portrait and landscape mode.
+Initially: use the predefined sizes from the CSS.
+When the user changes the size by dragging the separator, store that change in the local storage of the browser.
+The next time the application is loaded, use the values from the local storage for the initial size.
+Store the size for portrait and landscape mode separately.
+
+----
+
+The algorithm for checking the min. size of each container is not correct.
+
+It should not check the individual size of each container.
+Instead, it should ensure that the container can not become smaller the 25% of the available screen size of the
+device. Use height, when in portrait mode. use width, when in landscape mode.

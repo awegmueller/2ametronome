@@ -1,3 +1,7 @@
+:root {
+    --control-bg-color: #f8f8f8;
+}
+
 html, body {
     height: 100%;
 }
@@ -19,6 +23,26 @@ div {
 
 .hidden {
     display: none !important;
+}
+
+/* ---- SEPARATOR ---- */
+/* Drag handle between #metronomeContainer and #playlistContainer. Horizontal in portrait,
+   vertical in landscape - see the media queries at the bottom. */
+#separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 16px;
+    background-color: var(--control-bg-color);
+    cursor: row-resize;
+    touch-action: none; /* Do not scroll the page while dragging on a touch device */
+}
+
+#separator > img {
+    height: 18px;
+    opacity: 0.5;
+    pointer-events: none; /* Let the pointer events target #separator, not the icon */
 }
 
 /* ---- SETTINGS ---- */
@@ -134,6 +158,10 @@ tr.now-playing > td {
 }
 
 /* ---- CURRENT SONG INFO ---- */
+#currentSongInfo, #controlButtonBar {
+    flex-shrink: 0; /* Only #metronome may shrink when the separator is dragged */
+}
+
 #currentSongInfo {
     background-color: #BBB;
     font-weight: bold;
@@ -212,7 +240,7 @@ tr.now-playing > td {
     padding: 0 10px;
     border-bottom: solid 2px grey;
     justify-content: space-between;
-    background-color: #f8f8f8;
+    background-color: var(--control-bg-color);
 }
 
 .control-button {
@@ -277,8 +305,16 @@ pre {
 
 /* Portrait Mode */
 @media only screen and (orientation: portrait) {
+    #metronomeContainer {
+        display: flex;
+        flex-direction: column;
+    }
+    /* The height acts as the default size as long as #metronomeContainer has no height of its own.
+       As soon as Metro#renderSplit sets one, #metronome grows/shrinks to fill it. */
     #metronome {
         height: 320px;
+        flex-grow: 1;
+        min-height: 0;
     }
 }
 
@@ -303,6 +339,15 @@ pre {
     }
     #playlistTableContainer {
         max-height: unset !important;
+    }
+    #separator {
+        width: 18px;
+        height: 100%;
+        border-bottom: none;
+        cursor: col-resize;
+    }
+    #separator > img {
+        transform: rotate(90deg);
     }
     #controlButtonBar {
         border-bottom: none;

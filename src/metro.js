@@ -41,6 +41,8 @@ class DomUtil {
 
 class Metronome {
 
+    static VERSION = 1.0;
+
     static BEATS_PER_BAR = 4;  // TODO: interpret 'measure' from song
     static SCHEDULING_INTERVAL = 25; // [ms] How frequently to call scheduling function (in milliseconds)
     static SCHEDULE_AHEAD_TIME = 0.1; // [s] How far ahead to schedule audio (sec)
@@ -203,6 +205,12 @@ class Metro {
     static DEFAULT_MEASURE = '4/4';
     static DEFAULT_DURATION = '0:00';
 
+    /**
+     * Minimum size of each of the two main containers, as a fraction of the size the app has on the device.
+     * Its height in portrait mode, its width in landscape mode.
+     */
+    static SPLIT_MIN = 0.33;
+
     static NULL_SONG = {
       title: 'Play a song',
       bpm: 0,
@@ -217,6 +225,7 @@ class Metro {
         this.domUtil = new DomUtil();
         this.settings = new MetroSettings(this.onSettingsChange.bind(this));
         this.currentSong = Metro.NULL_SONG;
+        this.drag = null; // Separator drag state, only set while dragging
     }
 
     startup() {
@@ -229,14 +238,136 @@ class Metro {
         if (this.settings.songIndex > -1) {
             this.setCurrentSong(this.songAtIndex(this.settings.songIndex));
         }
+        this.applySplit();
         this.updatePlaylistMaxHeight();
     }
 
+    /**
+     * Called on every pointermove while dragging the separator: keep it free of console output.
+     */
     updatePlaylistMaxHeight() {
-        let container = document.getElementById('playlistTableContainer');
-        let playlistMaxHeight = Math.floor(window.innerHeight - container.getBoundingClientRect().top);
-        container.setAttribute('style', 'max-height:' + playlistMaxHeight + 'px');
-        console.log('Set playlist max-height', playlistMaxHeight);
+        let $container = document.getElementById('playlistTableContainer');
+        let playlistMaxHeight = Math.floor(window.innerHeight - $container.getBoundingClientRect().top);
+        $container.setAttribute('style', 'max-height:' + playlistMaxHeight + 'px');
+    }
+
+    /**
+     * Must stay in sync with the orientation media queries in metro.css.
+     */
+    isPortrait() {
+        return window.matchMedia('(orientation: portrait)').matches;
+    }
+
+    /**
+     * The size the two main containers share, i.e. without the separator.
+     */
+    availableSplitSize() {
+        let $root = document.getElementById('rootContainer');
+        let $separator = document.getElementById('separator');
+        return this.isPortrait()
+            ? $root.clientHeight - $separator.offsetHeight
+            : $root.clientWidth - $separator.offsetWidth;
+    }
+
+    /**
+     * @returns {number} minimum size of each container [px]: SPLIT_MIN of the size the app has on
+     *          the device - its height in portrait mode, its width in landscape mode.
+     */
+    minSplitSize() {
+        return Math.round(Metro.SPLIT_MIN * (this.isPortrait() ? window.innerHeight : window.innerWidth));
+    }
+
+    /**
+     * @param size wanted size of #metronomeContainer [px]
+     * @param available size shared by both containers [px], see availableSplitSize()
+     * @returns {number} size of #metronomeContainer [px], keeping both containers at minSplitSize()
+     */
+    clampSplitSize(size, available) {
+        let min = this.minSplitSize();
+        if (2 * min > available) {
+            // Both minimums do not fit, e.g. in a small desktop browser window: split evenly
+            return Math.round(available / 2);
+        }
+        return Math.min(available - min, Math.max(min, size));
+    }
+
+    /**
+     * Applies the stored size of the current orientation, if there is one.
+     */
+    applySplit() {
+        this.renderSplit(this.isPortrait() ? this.settings.splitPortrait : this.settings.splitLandscape);
+    }
+
+    /**
+     * @param fraction size of #metronomeContainer, 0..1 - or null to fall back to the sizes from the CSS
+     */
+    renderSplit(fraction) {
+        let $metronomeContainer = document.getElementById('metronomeContainer');
+        let $playlistContainer = document.getElementById('playlistContainer');
+
+        // Always drop the inline sizes first: they are orientation specific and must not leak
+        // into the other orientation on device rotation.
+        [$metronomeContainer, $playlistContainer].forEach($container => {
+            $container.style.width = '';
+            $container.style.height = '';
+        });
+        if (!fraction) {
+            return;
+        }
+
+        let available = this.availableSplitSize();
+        let metronomeSize = this.clampSplitSize(Math.round(available * fraction), available);
+        if (this.isPortrait()) {
+            // Block layout: #playlistContainer simply takes what is left below the separator,
+            // its scroll area is sized by updatePlaylistMaxHeight().
+            $metronomeContainer.style.height = metronomeSize + 'px';
+        } else {
+            // Flex layout: both sizes have to add up, otherwise the flex items would shrink.
+            $metronomeContainer.style.width = metronomeSize + 'px';
+            $playlistContainer.style.width = (available - metronomeSize) + 'px';
+        }
+    }
+
+    onPointerDownSeparator(event) {
+        let $separator = document.getElementById('separator');
+        let $metronomeContainer = document.getElementById('metronomeContainer');
+        let portrait = this.isPortrait();
+        // Route all following pointer events to the separator, whatever the pointer is dragged over
+        $separator.setPointerCapture(event.pointerId);
+        this.drag = {
+            portrait: portrait,
+            available: this.availableSplitSize(),
+            startPosition: portrait ? event.clientY : event.clientX,
+            startSize: portrait ? $metronomeContainer.offsetHeight : $metronomeContainer.offsetWidth,
+            fraction: null
+        };
+        event.preventDefault();
+    }
+
+    onPointerMoveSeparator(event) {
+        if (!this.drag) {
+            return;
+        }
+        let delta = (this.drag.portrait ? event.clientY : event.clientX) - this.drag.startPosition;
+        let available = this.drag.available;
+        let metronomeSize = this.clampSplitSize(this.drag.startSize + delta, available);
+        // Store the size as a fraction, so it survives a change of the window size
+        this.drag.fraction = metronomeSize / available;
+        this.renderSplit(this.drag.fraction);
+        this.updatePlaylistMaxHeight();
+    }
+
+    onPointerUpSeparator(event) {
+        if (!this.drag) {
+            return;
+        }
+        let drag = this.drag;
+        this.drag = null;
+        if (drag.fraction === null) {
+            return; // A click without a move: nothing changed
+        }
+        console.log('Separator dragged, ' + (drag.portrait ? 'portrait' : 'landscape') + ' size', drag.fraction);
+        this.settings.setSplit(drag.portrait, drag.fraction);
     }
 
     initDomTemplates() {
@@ -253,6 +384,13 @@ class Metro {
         document.getElementById('loadPlaylistLink').addEventListener('click', this.onClickPlaylistLink.bind(this));
         document.getElementById('settingsMenu').addEventListener('click', this.onClickSettingsMenu.bind(this));
         document.getElementById('closeSettingsMenu').addEventListener('click', this.onClickCloseSettingsMenu.bind(this));
+
+        let $separator = document.getElementById('separator');
+        $separator.addEventListener('pointerdown', this.onPointerDownSeparator.bind(this));
+        $separator.addEventListener('pointermove', this.onPointerMoveSeparator.bind(this));
+        let pointerUpHandler = this.onPointerUpSeparator.bind(this);
+        $separator.addEventListener('pointerup', pointerUpHandler);
+        $separator.addEventListener('pointercancel', pointerUpHandler);
 
         let deviceRotationHandler = this.onDeviceRotation.bind(this);
         window.addEventListener('resize', deviceRotationHandler, false);
@@ -274,6 +412,7 @@ class Metro {
     }
     
     onDeviceRotation(event) {
+        this.applySplit(); // Before updatePlaylistMaxHeight: that one measures the resulting layout
         this.updatePlaylistMaxHeight();
     }
 
@@ -288,6 +427,7 @@ class Metro {
     toggleSettingsPopup(settingsVisible) {
         this.domUtil.toggleCssClass(document.getElementById('metronomeContainer'), 'hidden', settingsVisible);
         this.domUtil.toggleCssClass(document.getElementById('playlistContainer'), 'hidden', settingsVisible);
+        this.domUtil.toggleCssClass(document.getElementById('separator'), 'hidden', settingsVisible);
         this.domUtil.toggleCssClass(document.getElementById('settingsPopup'), 'hidden', !settingsVisible);
     }
 
@@ -639,6 +779,10 @@ class MetroSettings {
         this.pitch = MetroSettings.PITCH_DEFAULT;
         this.autoPlayEnabled = true;
         this.autoStopSilenceEnabled = true;
+        // Size of #metronomeContainer as a fraction (0..1), per orientation.
+        // null means: use the sizes defined in metro.css.
+        this.splitPortrait = null;
+        this.splitLandscape = null;
     }
 
     init() {
@@ -651,6 +795,9 @@ class MetroSettings {
             this.songIndex = settings.songIndex;
             this.autoPlayEnabled = settings.autoPlayEnabled;
             this.autoStopSilenceEnabled = settings.autoStopSilenceEnabled;
+            // Settings stored by an older version have no split sizes
+            this.splitPortrait = settings.splitPortrait || null;
+            this.splitLandscape = settings.splitLandscape || null;
         } else {
             this.storeSettings();
         }
@@ -686,7 +833,9 @@ class MetroSettings {
             tone: this.tone,
             pitch: this.pitch,
             autoPlayEnabled: this.autoPlayEnabled,
-            autoStopSilenceEnabled: this.autoStopSilenceEnabled
+            autoStopSilenceEnabled: this.autoStopSilenceEnabled,
+            splitPortrait: this.splitPortrait,
+            splitLandscape: this.splitLandscape
         }));
     }
 
@@ -766,6 +915,19 @@ class MetroSettings {
         this.songIndex = songIndex;
         this.storeSettings();
     }
+
+    /**
+     * @param portrait true for the portrait size, false for the landscape size
+     * @param fraction size of #metronomeContainer, 0..1
+     */
+    setSplit(portrait, fraction) {
+        if (portrait) {
+            this.splitPortrait = fraction;
+        } else {
+            this.splitLandscape = fraction;
+        }
+        this.storeSettings();
+    }
 }
 
 let metro = new Metro();
@@ -777,6 +939,8 @@ metro.startup();
 // TODO: build / class-files separieren
 
 // TODO: How-to für Playlist.json
+// DONE: Grösse von metronomeContainer/playlistContainer per Separator einstellbar, im local storage
+//       gespeichert (portrait/landscape separat)
 // DONE: device rotation, max-height: https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
 // DONE: Setup-Screen
 // DONE: GUI drehbar landscape/portrait
