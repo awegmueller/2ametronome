@@ -321,6 +321,8 @@ class Metro {
         this.settings = new MetroSettings(this.onSettingsChange.bind(this));
         this.currentSong = Metro.NULL_SONG;
         this.drag = null; // Separator drag state, only set while dragging
+        this.muted = false; // Muted by the user, see #muteButton
+        this.autoSilenced = false; // Muted by the autoSilence of the current song
     }
 
     startup() {
@@ -333,6 +335,7 @@ class Metro {
         if (this.settings.songIndex > -1) {
             this.setCurrentSong(this.songAtIndex(this.settings.songIndex));
         }
+        this.renderMuteButton();
         this.applySplit();
         this.updatePlaylistMaxHeight();
     }
@@ -477,6 +480,7 @@ class Metro {
         document.getElementById('previousSongButton').addEventListener('click', this.onClickPreviousSongButton.bind(this));
         document.getElementById('nextSongButton').addEventListener('click', this.onClickNextSongButton.bind(this));
         document.getElementById('loadPlaylistLink').addEventListener('click', this.onClickPlaylistLink.bind(this));
+        document.getElementById('muteButton').addEventListener('click', this.onClickMuteButton.bind(this));
         document.getElementById('settingsMenu').addEventListener('click', this.onClickSettingsMenu.bind(this));
         document.getElementById('closeSettingsMenu').addEventListener('click', this.onClickCloseSettingsMenu.bind(this));
 
@@ -503,7 +507,29 @@ class Metro {
             this.onClickPausePlayButton();
         } else if (event.keyCode === 83) { // S
             this.onClickStopButton();
+        } else if (event.keyCode === 77) { // M
+            this.onClickMuteButton();
         }
+    }
+
+    onClickMuteButton(event) {
+        this.muted = !this.muted;
+        console.log('Muted by the user', this.muted);
+        this.applyMuted();
+        this.renderMuteButton();
+    }
+
+    /**
+     * The metronome stays silent as long as the user muted it or the current song is auto silenced.
+     */
+    applyMuted() {
+        if (this.metronome) {
+            this.metronome.setMuted(this.muted || this.autoSilenced);
+        }
+    }
+
+    renderMuteButton() {
+        this.domUtil.toggleCssClass(document.getElementById('muteButton'), 'muted', this.muted);
     }
     
     onDeviceRotation(event) {
@@ -646,6 +672,8 @@ class Metro {
         this.metronome = new Metronome(bpm, this.onBeatChange.bind(this));
         this.metronome.setTone(this.settings.tone);
         this.metronome.setPitch(this.settings.pitch);
+        this.autoSilenced = false; // A new metronome plays the song from the start
+        this.applyMuted(); // The mute of the user outlives the metronome instances
     }
 
     setState(state) {
@@ -781,12 +809,9 @@ class Metro {
             this.setState(Metro.STATE_STOPPED);
         }
         if (this.currentSong.autoSilence && (bar + 1) > this.currentSong.autoSilence) {
-            this.mute();
+            this.autoSilenced = true;
+            this.applyMuted();
         }
-    }
-
-    mute() {
-        this.metronome.setMuted(true);
     }
 
     renderBeat(beat, bar, beatInBar, running) {

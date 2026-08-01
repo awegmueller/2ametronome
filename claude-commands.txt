@@ -49,3 +49,22 @@ Additionally: make type definitions as JavaScript classes for all objects used i
 Define all properties, and instantiate these classes, whenever we read the playlists.
 Use the classes everywhere in the code, where we interact with the playlist and the songs.
 
+----
+
+Implement a new feature. A mute button is required.
+
+The button requires no SVG icon, as it shows only the uppercase letter "M".
+Thus, the button can be made with CSS alone.
+
+When mute is active, the background color of the button turns red and the M becomes white.
+When it is not active, the background is transparent and the M is black.
+The button should have the same size as the settings icon.
+
+The button is positioned left of the settings icon. Make sure that they have enough horizontal space
+so that the user does not click the wrong button accidentally.
+
+When 'mute' is active, the app should not make any noises.
+
+When the mute button is not active, it should have a fine border (no border, when it is active)
+
+Use a darker red for the active state. It must not have the same red tone, as the metro on the first beat (CSS class first-beat)

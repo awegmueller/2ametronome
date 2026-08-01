@@ -65,6 +65,14 @@ stylesheet supplies all the visuals:
 - `renderBeat` puts `first-beat` / `beat-0` / `beat-1` on `#metronome` — those are the flashing
   colors of the beat indicator.
 - `now-playing` highlights the current playlist row.
+- `muted` turns `#muteButton` red; the button is a CSS-only control (the letter M, no icon), sized and
+  spaced from the settings icon through the `--menu-button-*` variables.
+
+Silence has two independent sources, so `Metro` keeps `muted` (the user's `#muteButton`) apart from
+`autoSilenced` (the current song's `autoSilence`) and pushes `muted || autoSilenced` into the audio
+engine via `applyMuted()`. Collapsing them into one flag would let un-muting cancel an `autoSilence`
+that is still in effect. Because a fresh `Metronome` is built per song start and starts unmuted,
+`newMetronome()` has to re-apply — the user's mute outlives the instances, `autoSilenced` does not.
 
 Layout is also split across both: `metro.css` has `orientation: portrait` / `landscape` media queries
 (landscape puts metronome and playlist side by side), while `Metro.updatePlaylistMaxHeight()` computes
@@ -111,8 +119,7 @@ open TODO, not a supported property.
 `Metronome.BEATS_PER_BAR` is hard-coded to 4; the `measure` song property is defaulted to `4/4` and
 stored, but never read.
 `makeSineTone` ignores the scheduled `time` and plays immediately, so it is less accurate than
-`makeClickTone`. Both are marked `TODO` in the source, alongside a DONE/TODO log at the bottom of
-`metro.js` that tracks feature history.
+`makeClickTone`. Both are marked `TODO` in the source.
 
 # Coding guidelines
 

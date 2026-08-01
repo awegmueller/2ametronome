@@ -1,6 +1,10 @@
 :root {
     --control-bg-color: #f8f8f8;
     --font-size-small: 14px;
+    --first-beat-color: #FF0000;
+    --mute-active-color: #A00000;
+    --menu-button-size: 24px;
+    --menu-button-gap: 24px;
 }
 
 html, body {
@@ -46,11 +50,47 @@ div {
     pointer-events: none; /* Let the pointer events target #separator, not the icon */
 }
 
-/* ---- SETTINGS ---- */
-#settingsMenu {
+/* ---- METRONOME MENU (mute + settings) ---- */
+#metronomeMenu {
     position: absolute;
     top: 10px;
     right: 10px;
+    display: flex;
+    align-items: center;
+    gap: var(--menu-button-gap);
+}
+
+/* The global box-sizing: border-box keeps the outer size at --menu-button-size in both states. */
+#muteButton {
+    width: var(--menu-button-size);
+    height: var(--menu-button-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background-color: transparent;
+    color: black;
+    border: solid 1px black;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#muteButton.muted {
+    background-color: var(--mute-active-color);
+    color: white;
+    border: none;
+}
+
+/* ---- SETTINGS ---- */
+#settingsMenu {
+    cursor: pointer;
+}
+
+/* Keep the settings icon and the mute button the same size */
+#settingsMenu > img {
+    display: block;
+    width: var(--menu-button-size);
+    height: var(--menu-button-size);
 }
 
 #settingsPopup {
@@ -203,7 +243,7 @@ tr.now-playing > td {
 }
 
 #metronome.first-beat {
-    background-color: #FF0000;
+    background-color: var(--first-beat-color);
     color: white;
 }
 
