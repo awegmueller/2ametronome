@@ -6,7 +6,8 @@
 			"title": "When You're Gone",
 			"bpm": 128,
 			"autoSilence": 10,
-			"duration": "3:26"
+			"duration": "3:26",
+			"info": "Intro: 4 bars drums"
 		},
 		{
 			"title": "Tainted Love",
@@ -65,7 +66,8 @@
 			"title": "It Takes Two",
 			"bpm": 133,
 			"autoStop": 10,
-			"duration": "3:50"
+			"duration": "3:50",
+            "info": "Capo on 1st fret"
 		},
 		{
 			"title": "Poison",

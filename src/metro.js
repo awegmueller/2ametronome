@@ -38,10 +38,111 @@ class DomUtil {
 }
 
 // -------------------
+// Type definitions for the objects of a playlist JSON file. The format is documented for the user
+// in howto-playlist.html. Every playlist we read is turned into these classes, so that the rest of
+// the code never touches raw JSON.
+
+class Song {
+
+    static DEFAULT_MEASURE = '4/4';
+    static DEFAULT_DURATION = '0:00';
+
+    /**
+     * @param data raw song object of a playlist JSON file
+     * @param index 0 based position of the song in the playlist (derived, not configured)
+     */
+    constructor(data, index) {
+        this.index = index;
+        this.title = data.title;
+        this.bpm = data.bpm;
+        this.measure = data.measure || Song.DEFAULT_MEASURE; // TODO: never read, see Metronome.BEATS_PER_BAR
+        this.duration = data.duration || Song.DEFAULT_DURATION; // Format: m:ss
+        this.autoStop = data.autoStop || null; // [bars]
+        this.autoSilence = data.autoSilence || null; // [bars]
+        this.info = data.info || null; // Free text, displayed in #songInfo
+        this.durationInSeconds = Song.parseDuration(this.duration); // Derived, not configured
+    }
+
+    /**
+     * @throws Error if a mandatory property is missing
+     */
+    validate() {
+        if (!this.title) {
+            throw new Error('playlist.json: missing mandatory "title" attribute');
+        }
+        if (!this.bpm) {
+            throw new Error('playlist.json: missing mandatory "bpm" attribute, song "' + this.title + '"');
+        }
+    }
+
+    /**
+     * @param duration in the format m:ss
+     * @returns {number} the duration [s]
+     */
+    static parseDuration(duration) {
+        let parts = duration.split(':');
+        if (parts.length !== 2) {
+            throw new Error('Illegal format for duration. Expected: m:ss, actual=' + duration);
+        }
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    /**
+     * @returns {string} label for auto stop / auto silence, empty if the song has neither
+     */
+    autoInfoLabel() {
+        if (this.autoStop) {
+            return 'Auto stop: ' + this.autoStop;
+        }
+        if (this.autoSilence) {
+            return 'Auto silence: ' + this.autoSilence;
+        }
+        return '';
+    }
+}
+
+class Playlist {
+
+    static DEFAULT_TITLE = 'Playlist';
+
+    /**
+     * @param data raw playlist object of a playlist JSON file
+     * @throws Error if the playlist or one of its songs is invalid
+     */
+    constructor(data) {
+        // Note: a playlist file may also carry 'countIn', which is not supported yet (TODO)
+        this.title = data.title || Playlist.DEFAULT_TITLE;
+        this.songs = (data.songs || []).map((songData, index) => new Song(songData, index));
+        this.validate();
+    }
+
+    validate() {
+        if (!this.songs.length) {
+            throw new Error('playlist.json: "songs" must contain at least one song');
+        }
+        this.songs.forEach(song => song.validate());
+    }
+
+    /**
+     * @returns {Song}
+     */
+    songAt(index) {
+        return this.songs[index];
+    }
+
+    /**
+     * @returns {number} playing time of all songs [s]
+     */
+    durationInSeconds() {
+        return this.songs.reduce((total, song) => total + song.durationInSeconds, 0);
+    }
+}
+
+// -------------------
 
 class Metronome {
 
-    static VERSION = '1.0';
+    static VERSION = '1.01';
 
     static BEATS_PER_BAR = 4;  // TODO: interpret 'measure' from song
     static SCHEDULING_INTERVAL = 25; // [ms] How frequently to call scheduling function (in milliseconds)
@@ -202,20 +303,14 @@ class Metro {
     static STATE_PAUSED = 'paused';
     static STATE_STOPPED = 'stopped';
 
-    static DEFAULT_MEASURE = '4/4';
-    static DEFAULT_DURATION = '0:00';
-
     /**
      * Minimum size of each of the two main containers, as a fraction of the size the app has on the device.
      * Its height in portrait mode, its width in landscape mode.
      */
     static SPLIT_MIN = 0.33;
 
-    static NULL_SONG = {
-      title: 'Play a song',
-      bpm: 0,
-      index: -1
-    };
+    /** Placeholder as long as no song is selected. Not validated on purpose: it has no bpm. */
+    static NULL_SONG = new Song({title: 'Play a song', bpm: 0}, -1);
 
     constructor() {
         this.playlist = null;
@@ -458,13 +553,12 @@ class Metro {
         document.getElementById('currentSongTitle').innerText = song.title;
         document.getElementById('currentSongBpm').innerText = '' + song.bpm;
 
-        let songInfos = '';
-        if (song.autoStop) {
-            songInfos = 'Auto-Stop: ' + song.autoStop;
-        } else if (song.autoSilence) {
-            songInfos = 'Auto-Silence: ' + song.autoSilence;
-        }
-        document.getElementById('songInfos').innerText = songInfos;
+        // The optional info of the song, above the auto stop / auto silence label. Long texts are
+        // ellipsized by the CSS, the full text is available as a tooltip.
+        let $songInfo = document.getElementById('songInfo');
+        $songInfo.innerText = song.info || '';
+        $songInfo.setAttribute('title', song.info || '');
+        document.getElementById('songAutoInfo').innerText = song.autoInfoLabel();
 
         let navButtonsDisabled = song === Metro.NULL_SONG;
         this.domUtil.toggleCssClass(document.getElementById('previousSongButton'), 'disabled', navButtonsDisabled);
@@ -477,40 +571,14 @@ class Metro {
         }
     }
 
+    /**
+     * @param playlist {Playlist} already validated, see MetroSettings
+     */
     setPlaylist(playlist) {
         console.log('setPlaylist', playlist);
         this.playlist = playlist;
-        playlist.songs.forEach((song, i) => this.initSong(song, i));
         this.renderPlaylist();
         this.setCurrentSong(this.songAtIndex(0));
-    }
-
-    initSong(song, songIndex) {
-        if (!song.title) {
-            throw new Error('playlist.json: missing mandatory "title" attribute');
-        }
-        if (!song.bpm) {
-            throw new Error('playlist.json: missing mandatory "bpm" attribute');
-        }
-        song.index = songIndex; // Append property 'index' (not configured)
-        if (!song.measure) {
-            song.measure = Metro.DEFAULT_MEASURE;
-        }
-        if (!song.duration) {
-            song.duration = Metro.DEFAULT_DURATION;
-        }
-        this.initSongDurationInSeconds(song);
-    }
-
-    initSongDurationInSeconds(song) {
-        let duration = song.duration;
-        let parts = duration.split(":");
-        if (parts.length !== 2) {
-            throw new Error('Illegal format for duration. Expected: mm:ss, actual=' + duration);
-        }
-        let minutes = parseInt(parts[0]);
-        let seconds = parseInt(parts[1]);
-        song.durationInSeconds = minutes * 60 + seconds;
     }
 
     renderPlaylist(playlist) {
@@ -526,9 +594,7 @@ class Metro {
 
         // Add new rows
         let songs = this.playlist.songs;
-        let numSongs = songs.length;
-        let duration = 0;
-        for (let i = 0; i < numSongs; i++) {
+        for (let i = 0; i < songs.length; i++) {
             let song = songs[i];
             let row = this.playlistRowTemplate.cloneNode(true);
             row.removeAttribute('id');
@@ -537,10 +603,10 @@ class Metro {
             row.getElementsByClassName('songBpm')[0].innerText = this.labelBpm(song.bpm);
             row.addEventListener('click', this.onClickPlaySong.bind(this, i));
             tableBody.appendChild(row);
-            duration += song.durationInSeconds;
         }
 
-        document.getElementById('playlistSubtitle').innerText = numSongs + ' Songs - Duration: ' + this.formatDuration(duration);
+        document.getElementById('playlistSubtitle').innerText =
+            songs.length + ' Songs - Duration: ' + this.formatDuration(this.playlist.durationInSeconds());
         document.getElementById('playlistContainer').scrollTo(0, 0);
     }
 
@@ -559,8 +625,11 @@ class Metro {
         this.playSong(songIndex);
     }
 
+    /**
+     * @returns {Song}
+     */
     songAtIndex(songIndex) {
-        return this.playlist.songs[songIndex];
+        return this.playlist.songAt(songIndex);
     }
 
     playSong(songIndex) {
@@ -748,19 +817,22 @@ class MetroSettings {
     static PITCH_DEFAULT = 'default';
     static PITCH_LOW = 'low';
 
+    /** Raw playlist data, showcasing every property. Turned into a Playlist when it is loaded. */
     static DEMO_PLAYLIST = {
         title: 'Demo Playlist',
         songs: [
             {
                 title: 'Echoes of Tomorrow',
                 bpm: 128,
-                duration: '3:26'
+                duration: '3:26',
+                info: 'Capo on 2nd fret'
             },
             {
                 title: 'Dancing Shadows',
                 bpm: 165,
                 autoStop: 10,
-                duration: '2:35'
+                duration: '2:35',
+                info: 'Drummer starts. 4 bars of intro'
             },
             {
                 title: 'Silent Symphony',
@@ -789,7 +861,7 @@ class MetroSettings {
         let storedSettings = localStorage.getItem('settings');
         if (storedSettings) {
             let settings = JSON.parse(storedSettings);
-            this.playlist = settings.playlist;
+            this.playlist = this.readPlaylist(settings.playlist);
             this.tone = settings.tone;
             this.pitch = settings.pitch;
             this.songIndex = settings.songIndex;
@@ -798,6 +870,9 @@ class MetroSettings {
             // Settings stored by an older version have no split sizes
             this.splitPortrait = settings.splitPortrait || null;
             this.splitLandscape = settings.splitLandscape || null;
+            if (!this.playlist) {
+                this.songIndex = -1; // A song index without a playlist would break the startup
+            }
         } else {
             this.storeSettings();
         }
@@ -812,6 +887,24 @@ class MetroSettings {
     renderVersion() {
         let $versionInfo = document.getElementById('versionInfo');
         $versionInfo.innerText = 'Version ' + Metronome.VERSION;
+    }
+
+    /**
+     * Turns a stored playlist into a Playlist. A playlist that no longer passes the validation must
+     * not break the startup: we drop it and show the placeholder instead.
+     *
+     * @returns {Playlist|null}
+     */
+    readPlaylist(data) {
+        if (!data) {
+            return null;
+        }
+        try {
+            return new Playlist(data);
+        } catch (error) {
+            console.error('Ignoring the stored playlist', error);
+            return null;
+        }
     }
 
     checkRadio(value) {
@@ -856,7 +949,7 @@ class MetroSettings {
     }
 
     onClickLoadDemoPlaylistLink(event) {
-        this.setPlaylist(MetroSettings.DEMO_PLAYLIST);
+        this.setPlaylist(new Playlist(MetroSettings.DEMO_PLAYLIST));
     }
 
     onPitchChange(event) {
@@ -898,10 +991,11 @@ class MetroSettings {
             let reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    let playlist = JSON.parse(event.target.result);
-                    this.setPlaylist(playlist);
+                    this.setPlaylist(new Playlist(JSON.parse(event.target.result)));
                 } catch (error) {
-                    console.error('Failed to parse playlist JSON', error);
+                    console.error('Failed to read playlist JSON', error);
+                    // Inform the user (without this, the file picker would appear to do nothing)
+                    alert('Sorry, this playlist cannot be read:\n\n' + error.message);
                 }
             };
             reader.readAsText(file);
@@ -938,24 +1032,3 @@ class MetroSettings {
 
 let metro = new Metro();
 metro.startup();
-
-// TODO: manifest.json ausprobieren für fullscreen?
-// TODO: countIn anders visualisieren (grün) und andere töne
-// TODO: Fortschrittsbalken (Dauer)
-// TODO: build / class-files separieren
-
-// TODO: How-to für Playlist.json
-// DONE: Grösse von metronomeContainer/playlistContainer per Separator einstellbar, im local storage
-//       gespeichert (portrait/landscape separat)
-// DONE: device rotation, max-height: https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
-// DONE: Setup-Screen
-// DONE: GUI drehbar landscape/portrait
-// DONE: autoStop ein/aus (Settings)
-// DONE: initial selektierten song korrekt darstellen und buttons enablen
-// DONE: Playlist im local storage persistieren
-// DONE: Töne konfigurierbar(-er)
-// DONE: Playlist hochladen, Metro#setPlaylist implementieren
-// DONE: autoStop anzeigen
-// DONE: property für autoSilence ergänzen
-// DONE: Buttons für next/prev. song
-// DONE: Spielzeit pro Song und Summe für Playlist

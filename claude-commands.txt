@@ -22,3 +22,30 @@ The algorithm for checking the min. size of each container is not correct.
 It should not check the individual size of each container.
 Instead, it should ensure that the container can not become smaller the 25% of the available screen size of the
 device. Use height, when in portrait mode. use width, when in landscape mode.
+
+----
+
+In the settingsPopup (index.html): add a DIV with the version info of the application (read-only).
+
+Use the VERSION constant from metro.js for the value to display.
+
+----
+
+Implement a new feature. The playlist JSON must have an optional "info" property per song (=objects in the songs array).
+
+This optional info is displayed in the 'songInfos' DIV in the GUI.
+
+The info should be displayed above the existing texts in the songInfos DIV (like Auto silence/stop).
+
+Make sure the info text does not overlap other elements in the GUI (use clipping or ellipsis).
+
+If there is not enough space on the screen, prefer the 'Auto silence/stop' information.
+
+Extend the documentation and describe the new property.
+
+Extend the examples and add a showcase for the new property (especially the demo playlist).
+
+Additionally: make type definitions as JavaScript classes for all objects used in the playlist JSON files.
+Define all properties, and instantiate these classes, whenever we read the playlists.
+Use the classes everywhere in the code, where we interact with the playlist and the songs.
+

@@ -23,10 +23,16 @@ next/prev, settings, and playlist upload.
 
 ## Architecture
 
-`src/metro.js` is the entire application, ~800 lines, four classes, no modules — it is loaded with a
+`src/metro.js` is the entire application, ~900 lines, six classes, no modules — it is loaded with a
 plain `<script>` tag and instantiates itself at the bottom (`let metro = new Metro(); metro.startup();`).
-Classes are in one global scope and reference each other by name.
+Classes are in one global scope and reference each other by name, so declaration order matters: `Song`
+and `Playlist` come first because `Metro.NULL_SONG` is a `new Song(...)` in a static field initializer.
 
+- **`Playlist`** / **`Song`** — the type definitions for the playlist JSON format (see below). Every
+  playlist that is read — from a file, from `localStorage`, or from `MetroSettings.DEMO_PLAYLIST` — is
+  turned into these classes immediately, so no other code touches raw JSON. The constructors apply the
+  defaults and derive `index` / `durationInSeconds`; `validate()` is deliberately separate from the
+  constructor, because `Metro.NULL_SONG` is a `Song` with `bpm: 0` and must not be validated.
 - **`Metronome`** — audio engine only. Uses the standard Web Audio lookahead scheduler: a
   `setInterval` tick every `SCHEDULING_INTERVAL` (25 ms) schedules every beat falling within
   `SCHEDULE_AHEAD_TIME` (0.1 s) onto the `AudioContext` clock, so timing never depends on timer
@@ -86,10 +92,16 @@ target and the browser starts a native image drag instead of a resize.
 ## Playlist format
 
 The user-facing contract, documented in `src/howto-playlist.html` and exemplified by
-`src/playlist.json` / `src/playlist-zwicky-b.json`. A playlist has a `title` and a `songs` array; each
-song requires `title` and `bpm`, and may set `duration` ("m:ss"), `autoStop` (bars), and
-`autoSilence` (bars). `Metro.initSong` validates and fills defaults, adding a derived `index` and
-`durationInSeconds`. Changes to this format need matching updates in the how-to page.
+`src/playlist.json` / `src/playlist-zwicky-b.json` / `MetroSettings.DEMO_PLAYLIST`. A playlist has a
+`title` and a `songs` array; each song requires `title` and `bpm`, and may set `duration` ("m:ss"),
+`autoStop` (bars), `autoSilence` (bars), and `info` (free text shown under the beat indicator). The
+`Playlist` / `Song` classes are the single definition of the format — a change to it means touching
+those classes, the how-to page, and the examples (the demo playlist doubles as the showcase).
+
+`info` renders into `#songInfo`, stacked above `#songAutoInfo` inside `#songInfos`. The CSS gives it a
+horizontal ellipsis and makes it the only shrinkable line, so when `#metronome` gets short the auto
+stop / auto silence label survives and the info is squeezed away — that priority is a requirement, not
+an accident.
 
 Note that `src/playlist.json` also carries a top-level `countIn: true`, which nothing reads — it is an
 open TODO, not a supported property.
