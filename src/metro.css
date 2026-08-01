@@ -356,6 +356,9 @@ pre {
     background-color: #eee;
     font-family: Consolas, monospace;
 }
+li {
+    margin-bottom: 12px;
+}
 
 /* ---- MEDIA QUERIES ---- */
 

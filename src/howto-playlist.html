@@ -43,7 +43,7 @@
     {
       "title": "Silent Symphony",
       "bpm": 72,
-      "autoSilence": 10,
+      "autoSilence": "0:45",
       "duration": "3:31"
     }
   ]
@@ -73,22 +73,27 @@
 
     <h2>Song properties</h2>
 
-    <p>Each song requires at least these two properties: <span class="keyword">title</span> and
-        <span class="keyword">bpm</span>. Note that every property (the word on the left side of the colon
-        <span class="keyword">:</span>) in the file must start and end with a double quote <span
-                class="keyword">"</span>.
-        The following properties are optional, here's what they do:
-    </p>
-    <ul>
-        <li><span class="keyword">duration</span>: Format: m:ss (minutes:seconds), the play time of the song.
-            2AMetronome
-            sums the duration of each song and shows the overall playtime of your playlist.
+    <p>Each song requires at least these two properties: <span class="keyword">title</span> and 
+      <span class="keyword">bpm</span>. Note that every property-name (the word on the left side of the colon 
+      <span class="keyword">:</span>) in the file must start and end with a double quote <span class="keyword">"</span>. 
+      The following properties are optional, here's what they do:
+      <ul>
+        <li><span class="keyword">duration</span>: Play time of the song. 2AMetronome 
+          sums the duration of each song and shows the overall playtime of your playlist.<br>
+          Format: <span class="keyword">"m:ss"</span> (minutes:seconds)<br>
+          Example: <span class="keyword">"3:26"</span>
         </li>
-        <li><span class="keyword">autoStop</span>: number of bars. 2AMetronome stops automatically after that number of
-            bars.
+        <li><span class="keyword">autoStop</span>: The metronome stops automatically after that number of 
+          bars (1) or time (2).<br>
+          Format 1: <span class="keyword">10</span> Number of bars<br>
+          Format 2: <span class="keyword">"m:ss"</span> (minutes:seconds)<br>
+          Example: <span class="keyword">10</span> or <span class="keyword">"0:45"</span>
         </li>
-        <li><span class="keyword">autoSilence</span>: number of bars. 2AMetronome makes no more noises after that number
-            of bars but continues to blink, to give you visual feedback.
+        <li><span class="keyword">autoSilence</span>: The metronome makes no more noises after that number 
+          of bars (1) or time (2), but continues to blink, to give you visual feedback.<br>
+          Format 1: <span class="keyword">10</span> Number of bars<br>
+          Format 2: <span class="keyword">"m:ss"</span> (minutes:seconds)<br>
+          Example: <span class="keyword">10</span> or <span class="keyword">"0:45"</span>
         </li>
         <li><span class="keyword">info</span>: any text you like - a reminder for that song, for instance
             "Capo on 2nd fret" or who starts the intro. 2AMetronome shows it while the song is selected,

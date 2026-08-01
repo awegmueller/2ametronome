@@ -52,15 +52,15 @@ class Song {
      * @param index 0 based position of the song in the playlist (derived, not configured)
      */
     constructor(data, index) {
-        this.index = index;
+        this.index = index; // Append property 'index' (not configured)
         this.title = data.title;
         this.bpm = data.bpm;
         this.measure = data.measure || Song.DEFAULT_MEASURE; // TODO: never read, see Metronome.BEATS_PER_BAR
         this.duration = data.duration || Song.DEFAULT_DURATION; // Format: m:ss
-        this.autoStop = data.autoStop || null; // [bars]
-        this.autoSilence = data.autoSilence || null; // [bars]
-        this.info = data.info || null; // Free text, displayed in #songInfo
         this.durationInSeconds = Song.parseDuration(this.duration); // Derived, not configured
+        this.autoStop = data.autoStop ? Song.durationOrBars(data.autoStop, data.bpm) : null;
+        this.autoSilence = data.autoSilence ? Song.durationOrBars(data.autoSilence, data.bpm) : null;
+        this.info = data.info || null; // Free text, displayed in #songInfo
     }
 
     /**
@@ -85,6 +85,28 @@ class Song {
             throw new Error('Illegal format for duration. Expected: m:ss, actual=' + duration);
         }
         return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    static durationOrBars(value, bpm) {
+        if (typeof value === 'number') {
+            return value;
+        }
+        // Assume duration format m:ss
+        let durationInSeconds = Song.durationToSeconds(value);
+        let beatsPerSecond = bpm / 60;
+        let beats = durationInSeconds * beatsPerSecond;
+        let bars = Math.ceil(beats / Metronome.BEATS_PER_BAR);
+        return bars;
+    }
+
+    static durationToSeconds(duration) {
+        let parts = duration.split(":");
+        if (parts.length !== 2) {
+            throw new Error('Illegal format for duration. Expected: mm:ss, actual=' + duration);
+        }
+        let minutes = parseInt(parts[0]);
+        let seconds = parseInt(parts[1]);
+        return minutes * 60 + seconds;
     }
 
     /**
@@ -601,8 +623,8 @@ class Metro {
      * @param playlist {Playlist} already validated, see MetroSettings
      */
     setPlaylist(playlist) {
-        console.log('setPlaylist', playlist);
         this.playlist = playlist;
+        console.log('setPlaylist', playlist); // Output after init of songs
         this.renderPlaylist();
         this.setCurrentSong(this.songAtIndex(0));
     }
@@ -862,7 +884,7 @@ class MetroSettings {
             {
                 title: 'Silent Symphony',
                 bpm: 72,
-                autoSilence: 10,
+                autoSilence: '0:45',
                 duration: '3:31'
             }
         ]
